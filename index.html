@@ -161,25 +161,6 @@
     .layering-note strong { color: var(--text); }
     .no-forecast-note { font-size: 0.76rem; color: var(--muted); text-align: center; padding: 14px; font-style: italic; }
 
-    /* ── Chart tab ── */
-    .matrix-ctrl-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .matrix-ctrl-row label { font-size: 0.76rem; color: var(--muted); font-weight: 500; white-space: nowrap; }
-    .matrix-wrap { overflow-x: auto; margin-top: 14px; }
-    table.matrix { border-collapse: separate; border-spacing: 4px; min-width: 660px; }
-    .matrix th { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 6px 4px; text-align: center; }
-    .matrix td { border-radius: 8px; padding: 8px 4px; text-align: center; min-width: 76px; vertical-align: middle; }
-    .matrix .rlabel { text-align: right; padding-right: 10px; font-size: 0.72rem; font-weight: 600; color: var(--text); white-space: nowrap; background: transparent !important; }
-    .cell-comfort { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.95); display: block; line-height: 1.3; }
-    .cell-top { font-size: 0.58rem; color: rgba(255,255,255,0.8); display: block; }
-    .cell-bot { font-size: 0.58rem; color: rgba(255,255,255,0.7); display: block; }
-    .cell-fab { font-size: 0.55rem; color: rgba(255,255,255,0.55); display: block; margin-top: 2px; }
-    .ec-arctic   { background: #1e3a8a; } .ec-very-cold { background: #1d4ed8; } .ec-cold  { background: #2563eb; }
-    .ec-chilly   { background: #0284c7; } .ec-cool      { background: #0891b2; } .ec-mild  { background: #047857; }
-    .ec-comfy    { background: #15803d; } .ec-warm      { background: #b45309; } .ec-hot   { background: #b91c1c; }
-    .ec-very-hot { background: #7f1d1d; }
-    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-    .legend span { font-size: 0.67rem; color: var(--muted); }
-    .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -195,7 +176,6 @@
 <div class="tabs">
   <button class="tab active" onclick="showTab('today')">Today</button>
   <button class="tab" onclick="showTab('trip')">Trip</button>
-  <button class="tab" onclick="showTab('chart')">Chart</button>
 </div>
 
 <!-- ═══ TODAY TAB ═══ -->
@@ -345,46 +325,6 @@
 
 </div>
 
-<!-- ═══ CHART TAB ═══ -->
-<div id="tab-matrix" style="display:none;">
-
-  <div class="card">
-    <div class="card-label">Reference Chart</div>
-    <div class="matrix-ctrl-row">
-      <label>Humidity</label>
-      <input type="range" id="humidSlider2" min="0" max="100" value="45" style="width:80px; flex-shrink:0;">
-      <span style="font-size:0.85rem; font-weight:700; min-width:32px;"><span id="humidDisplay2">45</span>%</span>
-      <label>Wind</label>
-      <div class="tgl-group" style="gap:3px; flex:none;">
-        <button class="tgl active" id="mwind-calm"     onclick="setMatrixWind('calm')"     style="padding:4px 7px;font-size:0.65rem;">Calm</button>
-        <button class="tgl"        id="mwind-light"    onclick="setMatrixWind('light')"    style="padding:4px 7px;font-size:0.65rem;">Light</button>
-        <button class="tgl"        id="mwind-moderate" onclick="setMatrixWind('moderate')" style="padding:4px 7px;font-size:0.65rem;">Mod</button>
-        <button class="tgl"        id="mwind-strong"   onclick="setMatrixWind('strong')"   style="padding:4px 7px;font-size:0.65rem;">Strong</button>
-      </div>
-    </div>
-    <div class="matrix-ctrl-row" style="margin-top:8px;">
-      <label>Sky</label>
-      <div class="tgl-group" style="gap:3px; flex:none;">
-        <button class="tgl"        id="msun-full"     onclick="setMatrixSun('full')"     style="padding:4px 7px;font-size:0.65rem;">☀️ Full</button>
-        <button class="tgl active" id="msun-partial"  onclick="setMatrixSun('partial')"  style="padding:4px 7px;font-size:0.65rem;">🌤️ Part</button>
-        <button class="tgl"        id="msun-overcast" onclick="setMatrixSun('overcast')" style="padding:4px 7px;font-size:0.65rem;">☁️ Over</button>
-      </div>
-      <button class="tgl" id="mShadedBtn" onclick="setMatrixShaded()" style="padding:4px 10px;font-size:0.65rem;flex:none;">🌳 Shaded</button>
-    </div>
-    <div class="matrix-wrap">
-      <table class="matrix" id="matrixTable"></table>
-    </div>
-    <div class="legend">
-      <span><span class="legend-dot" style="background:#1d4ed8"></span>Very Cold</span>
-      <span><span class="legend-dot" style="background:#0284c7"></span>Chilly</span>
-      <span><span class="legend-dot" style="background:#047857"></span>Mild</span>
-      <span><span class="legend-dot" style="background:#b45309"></span>Warm</span>
-      <span><span class="legend-dot" style="background:#b91c1c"></span>Hot</span>
-      <span style="font-style:italic;">L = Linen · C = Cotton</span>
-    </div>
-  </div>
-
-</div>
 
 <script>
   // ─── State ───────────────────────────────────────────────────────────────────
@@ -392,8 +332,7 @@
   let tempF = 65, humidity = 45;
   let wind = 'calm', sun = 'partial';
   let weekTempF = 72, weekSun = 'mixed';
-  let matrixWind = 'calm', matrixSun = 'partial';
-  let shaded = false, matrixShaded = false;
+  let shaded = false;
   let lat = null, lon = null, locationName = '';
   let lastUpdated = null, hourlyForecast = null;
   let departureIsNow = true;
@@ -697,22 +636,6 @@
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   function dT(tF) { return unit === 'F' ? `${tF}°F` : `${Math.round((tF-32)*5/9)}°C`; }
   function markerPct(eff) { return Math.max(0, Math.min(100, ((eff - (-10)) / 115) * 100)); }
-  function tempClass(eff) {
-    if (eff < 20) return 'ec-arctic';  if (eff < 30) return 'ec-very-cold'; if (eff < 40) return 'ec-cold';
-    if (eff < 50) return 'ec-chilly';  if (eff < 58) return 'ec-cool';      if (eff < 65) return 'ec-mild';
-    if (eff < 72) return 'ec-comfy';   if (eff < 80) return 'ec-warm';      if (eff < 88) return 'ec-hot';
-    return 'ec-very-hot';
-  }
-  function comfortShort(eff) {
-    if (eff < 20) return 'FREEZING'; if (eff < 30) return 'V.COLD'; if (eff < 40) return 'COLD';
-    if (eff < 50) return 'CHILLY';   if (eff < 58) return 'COOL';   if (eff < 65) return 'MILD';
-    if (eff < 72) return 'COMFY';    if (eff < 80) return 'WARM';   if (eff < 88) return 'HOT';
-    return 'V.HOT';
-  }
-  function fabricShort(eff, hum) {
-    if (eff >= 68 && hum >= 50) return 'LINEN'; if (eff >= 72) return 'L/C'; return 'COTTON';
-  }
-
   // ─── UI helpers ──────────────────────────────────────────────────────────────
   function toggleSection(id) {
     const body  = document.getElementById(id + 'Body');
@@ -777,37 +700,6 @@
     document.getElementById('adviceEl').innerHTML = getAdvice(eff, activity, wind, sun);
   }
 
-  // ─── Matrix ──────────────────────────────────────────────────────────────────
-  function renderMatrix() {
-    const hum = parseInt(document.getElementById('humidSlider2').value);
-    const TEMPS = [20, 30, 40, 50, 60, 70, 80, 90];
-    const ACTS_ORDER = ['short-walk', 'long-walk', 'run', 'bike', 'scooter', 'moped'];
-    let html = '<thead><tr><th></th>';
-    TEMPS.forEach(t => { html += `<th>${unit==='F'?t+'°F':Math.round((t-32)*5/9)+'°C'}</th>`; });
-    html += '</tr></thead><tbody>';
-    ACTS_ORDER.forEach(act => {
-      const a = ACTS[act];
-      html += `<tr><td class="rlabel">${a.icon} ${a.name}</td>`;
-      TEMPS.forEach(t => {
-        const eff  = effTemp(t, hum, act, matrixWind, matrixSun, matrixShaded);
-        const cls  = tempClass(eff);
-        const effD = unit==='F'?`${eff}°F`:Math.round((eff-32)*5/9)+'°C';
-        const top  = eff<60?'long sleeve':eff<82?'short sleeve':'tank';
-        const bot  = eff<48?'warm pants':eff<65?'pants':eff<75?'shorts?':'shorts';
-        const coat = eff<45?'🧥 ':'';
-        html += `<td class="${cls}" title="${a.name} @ ${unit==='F'?t+'°F':Math.round((t-32)*5/9)+'°C'} → ${effD}">
-          <span class="cell-comfort">${comfortShort(eff)}</span>
-          <span class="cell-top">${coat}${top}</span>
-          <span class="cell-bot">${bot}</span>
-          <span class="cell-fab">${fabricShort(eff,hum)}</span>
-        </td>`;
-      });
-      html += '</tr>';
-    });
-    html += '</tbody>';
-    document.getElementById('matrixTable').innerHTML = html;
-  }
-
   // ─── State setters ────────────────────────────────────────────────────────────
   function setActivity(act) {
     activity = act;
@@ -819,11 +711,7 @@
   function setSun(s)     { sun = s;     ['full','partial','overcast'].forEach(x => document.getElementById('sun-'+x).classList.toggle('active',x===s)); render(); renderTripForecast(); }
   function setWeekSun(s) { weekSun = s; ['sunny','mixed','cloudy'].forEach(x => document.getElementById('wsun-'+x).classList.toggle('active',x===s)); render(); }
   function setShaded()   { shaded = !shaded; document.getElementById('shadedBtn').classList.toggle('active',shaded); render(); renderTripForecast(); }
-  function setMatrixShaded() { matrixShaded = !matrixShaded; document.getElementById('mShadedBtn').classList.toggle('active',matrixShaded); renderMatrix(); }
-  function setMatrixWind(w)  { matrixWind = w; ['calm','light','moderate','strong'].forEach(x => document.getElementById('mwind-'+x).classList.toggle('active',x===w)); renderMatrix(); }
-  function setMatrixSun(s)   { matrixSun = s;  ['full','partial','overcast'].forEach(x => document.getElementById('msun-'+x).classList.toggle('active',x===s)); renderMatrix(); }
-
-  function setUnit(u) {
+function setUnit(u) {
     unit = u;
     document.getElementById('btnF').classList.toggle('active', u==='F');
     document.getElementById('btnC').classList.toggle('active', u==='C');
@@ -839,15 +727,12 @@
     document.getElementById('tempUnitLbl').textContent = u==='F'?'°F':'°C';
     document.getElementById('weekTempUnitLbl').textContent = u==='F'?'°F':'°C';
     render(); renderTripForecast();
-    if (document.getElementById('tab-matrix').style.display !== 'none') renderMatrix();
   }
 
   function showTab(tab) {
-    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['today','trip','chart'][i] === tab));
-    document.getElementById('tab-today').style.display  = tab === 'today' ? 'block' : 'none';
-    document.getElementById('tab-trip').style.display   = tab === 'trip'  ? 'block' : 'none';
-    document.getElementById('tab-matrix').style.display = tab === 'chart' ? 'block' : 'none';
-    if (tab === 'chart') renderMatrix();
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['today','trip'][i] === tab));
+    document.getElementById('tab-today').style.display = tab === 'today' ? 'block' : 'none';
+    document.getElementById('tab-trip').style.display  = tab === 'trip'  ? 'block' : 'none';
   }
 
   // ─── Slider listeners ─────────────────────────────────────────────────────────
