@@ -3,234 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>What to Wear</title>
+  <title>Feels Like</title>
   <style>
     :root {
-      --bg: #111318; --surface: #1c1f2e; --surface2: #252940;
-      --border: #30354f; --text: #e2e5f0; --muted: #7a80a0; --accent: #6c8ef5;
+      --bg: #0f1117; --surface: #181b26; --surface2: #1f2335;
+      --border: #272c42; --text: #e2e5f0; --muted: #606680; --accent: #6c8ef5;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; max-width: 480px; margin: 0 auto; padding-bottom: 48px;
     }
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 18px; max-width: 1040px;
-    }
-    h1 { font-size: 1.2rem; font-weight: 700; }
+
+    /* ── Header ── */
+    header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0; }
+    .app-name { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
     .unit-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-    .unit-btn { padding: 3px 10px; background: transparent; border: none; color: var(--muted); font-size: 0.75rem; font-weight: 600; cursor: pointer; }
-    .unit-btn.active { background: var(--accent); color: white; }
-    .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px; width: fit-content; margin-bottom: 18px; }
-    .tab { padding: 6px 18px; border-radius: 5px; border: none; background: transparent; color: var(--muted); font-size: 0.875rem; font-weight: 500; cursor: pointer; }
-    .tab.active { background: var(--surface2); color: var(--text); }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
-    .section-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 13px; }
+    .unit-btn { padding: 4px 11px; background: transparent; border: none; color: var(--muted); font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+    .unit-btn.active { background: var(--accent); color: #fff; }
 
-    /* Layout */
-    .today-layout { display: grid; grid-template-columns: 272px 1fr; gap: 14px; max-width: 1040px; }
-    .left-col { display: flex; flex-direction: column; gap: 12px; }
-    .right-col { display: flex; flex-direction: column; gap: 12px; }
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 4px; padding: 14px 16px 0; }
+    .tab { padding: 6px 18px; border-radius: 20px; border: 1px solid transparent; background: transparent; color: var(--muted); font-size: 0.82rem; font-weight: 500; cursor: pointer; }
+    .tab.active { background: var(--surface); color: var(--text); border-color: var(--border); }
 
-    /* Location search */
-    .loc-row { display: flex; gap: 5px; margin-bottom: 8px; }
-    .loc-input {
-      flex: 1; background: var(--surface2); border: 1.5px solid var(--border);
-      border-radius: 8px; padding: 5px 9px; color: var(--text); font-size: 0.78rem;
-      outline: none; min-width: 0;
-    }
+    /* ── Cards ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 18px 20px; margin: 10px 14px 0; }
+    .card-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 14px; }
+
+    /* ── Location ── */
+    .loc-row { display: flex; gap: 6px; }
+    .loc-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; color: var(--text); font-size: 0.85rem; outline: none; min-width: 0; }
     .loc-input:focus { border-color: var(--accent); }
     .loc-input::placeholder { color: var(--muted); }
-    .loc-icon-btn {
-      background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px;
-      padding: 5px 8px; cursor: pointer; font-size: 0.82rem; color: var(--muted);
-      transition: all 0.1s; flex-shrink: 0;
-    }
-    .loc-icon-btn:hover { border-color: var(--accent); color: var(--text); }
-    .loc-status { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--muted); margin-bottom: 14px; }
-    .loc-status.live  { color: #4ade80; }
+    .loc-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; cursor: pointer; font-size: 0.9rem; color: var(--muted); flex-shrink: 0; transition: border-color 0.1s; }
+    .loc-btn:hover { border-color: var(--accent); }
+    .loc-status { font-size: 0.72rem; color: var(--muted); margin-top: 8px; display: flex; align-items: center; gap: 5px; min-height: 16px; }
+    .loc-status.live { color: #4ade80; }
     .loc-status.error { color: #f87171; }
-    .loc-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .loc-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
     .loc-dot.pulse { animation: blink 1.2s ease-in-out infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-    /* Sliders */
-    .slider-row { margin-bottom: 16px; }
-    .slider-row:last-child { margin-bottom: 0; }
-    .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
-    .slider-label { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
-    .slider-val { font-size: 1.15rem; font-weight: 700; }
-    .slider-unit { font-size: 0.72rem; color: var(--muted); margin-left: 2px; }
-    input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none; height: 5px; border-radius: 3px; outline: none; cursor: pointer; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.5); cursor: pointer; }
-    #tempSlider      { background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); }
-    #humidSlider     { background: linear-gradient(to right, #94a3b8, #60a5fa); }
-    #humidSlider2    { background: linear-gradient(to right, #94a3b8, #60a5fa); }
-    #weekTempSlider  { background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); }
-
-    /* Toggle groups */
-    .tgl-group { display: flex; gap: 4px; }
-    .tgl { flex: 1; padding: 5px 4px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 7px; color: var(--muted); font-size: 0.7rem; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.12s; white-space: nowrap; }
-    .tgl:hover { border-color: var(--accent); }
-    .tgl.active { border-color: var(--accent); background: rgba(108,142,245,0.12); color: var(--text); }
-    .tgl-icon { display: block; font-size: 1rem; margin-bottom: 2px; }
-    .shade-tgl { width: 100%; font-size: 0.75rem; padding: 6px 10px; }
-    .shade-tgl.active { border-color: rgba(74,222,128,0.6) !important; background: rgba(74,222,128,0.09) !important; color: #4ade80 !important; }
-
-    /* Weather rows */
-    .weather-row { margin-bottom: 14px; }
-    .weather-row:last-child { margin-bottom: 0; }
-    .weather-row-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
-
-    /* Activities — 3-column */
-    .act-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
-    .act-btn { background: var(--surface2); border: 2px solid var(--border); border-radius: 10px; padding: 9px 4px; cursor: pointer; text-align: center; color: var(--muted); transition: all 0.15s; }
-    .act-btn:hover { border-color: var(--accent); }
-    .act-btn.active { border-color: var(--accent); background: rgba(108,142,245,0.12); color: var(--text); }
-    .act-icon { font-size: 1.3rem; display: block; margin-bottom: 3px; line-height: 1; }
-    .act-name { font-size: 0.67rem; font-weight: 600; }
-
-    /* Trip Planning card */
-    .trip-dep-row { display: flex; gap: 4px; align-items: center; margin-bottom: 10px; }
-    .trip-ret-row { display: flex; gap: 4px; align-items: center; }
-    .trip-side-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 6px; }
-    .trip-input-row { display: flex; gap: 4px; align-items: center; }
-    input[type="datetime-local"] {
-      flex: 1; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 7px;
-      padding: 5px 7px; color: var(--text); font-size: 0.71rem; outline: none; min-width: 0;
-      color-scheme: dark;
-    }
-    input[type="datetime-local"]:focus { border-color: var(--accent); }
-    .trip-mini-btn {
-      background: var(--surface2); border: 1.5px solid var(--border); border-radius: 6px;
-      padding: 4px 7px; font-size: 0.64rem; color: var(--muted); cursor: pointer; white-space: nowrap;
-      flex-shrink: 0; transition: all 0.1s;
-    }
-    .trip-mini-btn:hover { border-color: var(--accent); color: var(--text); }
-    .add-return-btn {
-      width: 100%; background: transparent; border: 1.5px dashed var(--border); border-radius: 7px;
-      padding: 6px 10px; color: var(--muted); font-size: 0.72rem; cursor: pointer; text-align: left;
-      transition: all 0.12s;
-    }
-    .add-return-btn:hover { border-color: var(--accent); color: var(--text); }
-
-    /* Trip Forecast card */
-    .trip-forecast-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: start; margin-bottom: 12px; }
-    .trip-fcol { background: var(--surface2); border-radius: 10px; padding: 12px; }
-    .trip-fcol-label { font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 5px; }
-    .trip-fcol-conditions { font-size: 0.7rem; color: var(--muted); margin-bottom: 10px; }
-    .trip-outfit-chips { display: flex; flex-direction: column; gap: 5px; }
-    .trip-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 7px; font-size: 0.71rem; font-weight: 600; border: 1.5px solid; width: fit-content; }
-    .trip-chip.essential { border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.07); color: #4ade80; }
-    .trip-chip.optional  { border-color: rgba(251,146,60,0.4);  background: rgba(251,146,60,0.07);  color: #fb923c; }
-    .trip-chip-icon { font-size: 1rem; line-height: 1; }
-    .trip-big-arrow { color: var(--muted); font-size: 1.1rem; display: flex; align-items: center; padding-top: 46px; }
-    .layering-note { padding: 10px 14px; background: var(--surface2); border-radius: 9px; border-left: 3px solid var(--accent); font-size: 0.79rem; color: var(--muted); line-height: 1.55; }
-    .layering-note strong { color: var(--text); }
-    .no-forecast-note { font-size: 0.76rem; color: var(--muted); text-align: center; padding: 10px; font-style: italic; }
-
-    /* Comfortability card */
-    .comfort-card-inner { display: flex; align-items: flex-start; gap: 18px; }
-    .comfort-label-block { min-width: 0; }
-    .comfort-word { font-size: 2.2rem; font-weight: 900; letter-spacing: -0.03em; line-height: 1; text-transform: uppercase; }
-    .comfort-emoji { font-size: 1.6rem; margin-right: 8px; vertical-align: middle; }
-    .comfort-temps { font-size: 0.78rem; color: var(--muted); margin-top: 5px; display: flex; flex-wrap: wrap; gap: 8px; }
-    .comfort-temps span { white-space: nowrap; }
-    .comfort-temps strong { color: var(--text); font-weight: 600; }
-    .comfort-divider { width: 1px; flex-shrink: 0; background: var(--border); align-self: stretch; }
-    .breakdown { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-    .brow { display: flex; justify-content: space-between; font-size: 0.75rem; gap: 8px; }
+    /* ── Hero ── */
+    .hero { text-align: center; padding: 28px 16px 22px; }
+    .hero-emoji { font-size: 2.8rem; line-height: 1; margin-bottom: 8px; display: block; }
+    .hero-word { font-size: 3.2rem; font-weight: 900; letter-spacing: -0.04em; line-height: 1; text-transform: uppercase; }
+    .hero-sub { font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
+    .hero-sub strong { color: var(--text); font-weight: 600; }
+    .comfort-bar-wrap { margin-top: 20px; }
+    .comfort-bar { height: 4px; border-radius: 2px; background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); position: relative; }
+    .comfort-marker { position: absolute; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--bg); transform: translateX(-50%); transition: left 0.3s ease; }
+    .comfort-bar-labels { display: flex; justify-content: space-between; margin-top: 5px; }
+    .comfort-bar-labels span { font-size: 0.58rem; color: var(--muted); }
+    .hero-tip { font-size: 0.78rem; color: var(--muted); line-height: 1.55; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: left; }
+    .hero-tip strong { color: var(--text); }
+    .breakdown-toggle { display: block; width: 100%; background: none; border: none; color: var(--muted); font-size: 0.7rem; cursor: pointer; padding: 10px 0 0; text-align: center; letter-spacing: 0.03em; }
+    .breakdown { padding-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+    .breakdown.hidden { display: none; }
+    .brow { display: flex; justify-content: space-between; font-size: 0.78rem; }
     .brow span:first-child { color: var(--muted); }
-    .brow .bval { font-weight: 600; white-space: nowrap; }
+    .brow .bval { font-weight: 600; }
     .hot-val { color: #f87171; } .cold-val { color: #60a5fa; } .sun-val { color: #fbbf24; }
-    .comfort-bar-wrap { margin-top: 14px; }
-    .comfort-bar { height: 5px; border-radius: 3px; background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); position: relative; }
-    .comfort-marker { position: absolute; top: -5px; width: 15px; height: 15px; border-radius: 50%; background: white; border: 2px solid #111; box-shadow: 0 0 0 2px white; transform: translateX(-50%); transition: left 0.2s; }
-    .comfort-bar-labels { display: flex; justify-content: space-between; margin-top: 6px; }
-    .comfort-bar-labels span { font-size: 0.6rem; color: var(--muted); }
 
-    /* Outfit */
-    .outfit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 9px; }
-    .ocard { border-radius: 11px; padding: 12px 10px; text-align: center; border: 1.5px solid; }
-    .ocard.essential { border-color: rgba(74,222,128,0.5); background: rgba(74,222,128,0.06); }
-    .ocard.optional  { border-color: rgba(251,146,60,0.5);  background: rgba(251,146,60,0.06); }
-    .ocard.skip      { border-color: var(--border); opacity: 0.25; }
-    .ocard-emoji  { font-size: 1.8rem; line-height: 1; margin-bottom: 7px; }
-    .ocard-name   { font-size: 0.75rem; font-weight: 600; margin-bottom: 3px; }
-    .ocard-detail { font-size: 0.64rem; font-weight: 500; }
-    .essential .ocard-detail { color: #4ade80; }
-    .optional  .ocard-detail { color: #fb923c; }
-    .skip      .ocard-detail { color: var(--muted); }
+    /* ── Activity strip ── */
+    .act-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .act-strip::-webkit-scrollbar { display: none; }
+    .act-pill { display: flex; align-items: center; gap: 5px; padding: 7px 14px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 20px; color: var(--muted); font-size: 0.8rem; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
+    .act-pill:hover { border-color: var(--accent); }
+    .act-pill.active { border-color: var(--accent); background: rgba(108,142,245,0.1); color: var(--text); }
+    .act-icon { font-size: 1.05rem; }
 
-    /* Fabric */
-    .fabric-banner { margin-top: 12px; padding: 10px 14px; border-radius: 9px; border: 1.5px solid; display: flex; align-items: center; gap: 10px; }
-    .fabric-banner.linen-strong { border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.07); }
-    .fabric-banner.linen-prefer { border-color: rgba(52,211,153,0.35); background: rgba(52,211,153,0.04); }
-    .fabric-banner.either       { border-color: rgba(251,191,36,0.4);  background: rgba(251,191,36,0.05); }
-    .fabric-banner.cotton       { border-color: rgba(148,163,184,0.4); background: rgba(148,163,184,0.05); }
-    .fabric-icon { font-size: 1.4rem; flex-shrink: 0; }
-    .fabric-text-wrap { flex: 1; }
-    .fabric-choice { font-size: 0.82rem; font-weight: 700; color: var(--text); }
-    .fabric-reason { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+    /* ── Outfit list ── */
+    .outfit-list { display: flex; flex-direction: column; gap: 11px; }
+    .outfit-item { display: flex; align-items: center; gap: 12px; }
+    .outfit-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .outfit-dot.essential { background: #4ade80; }
+    .outfit-dot.optional  { background: #fb923c; }
+    .outfit-icon { font-size: 1.4rem; width: 28px; text-align: center; flex-shrink: 0; }
+    .outfit-name { font-size: 0.88rem; font-weight: 600; }
+    .outfit-detail { font-size: 0.7rem; color: var(--muted); }
+    .fabric-note { margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--border); font-size: 0.76rem; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+    .fabric-note strong { color: var(--text); }
 
-    /* Pool */
-    .pool-status { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 10px; border: 1.5px solid; margin-bottom: 12px; }
-    .pool-status.great   { border-color: rgba(74,222,128,0.5);  background: rgba(74,222,128,0.07); }
-    .pool-status.good    { border-color: rgba(163,230,53,0.5);   background: rgba(163,230,53,0.06); }
-    .pool-status.marginal{ border-color: rgba(251,146,60,0.5);   background: rgba(251,146,60,0.06); }
-    .pool-status.cold    { border-color: rgba(96,165,250,0.5);   background: rgba(96,165,250,0.06); }
-    .pool-status.no-go   { border-color: var(--border); background: rgba(255,255,255,0.02); }
+    /* ── Collapsible sections ── */
+    .collapsible-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+    .collapsible-header .card-label { margin-bottom: 0; }
+    .coll-arrow { font-size: 0.62rem; color: var(--muted); transition: transform 0.2s; display: inline-block; }
+    .coll-arrow.open { transform: rotate(180deg); }
+    .coll-body { display: none; padding-top: 16px; }
+    .coll-body.open { display: block; }
+
+    /* ── Sliders & toggles ── */
+    .slider-row { margin-bottom: 16px; }
+    .slider-row:last-of-type { margin-bottom: 0; }
+    .slider-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .slider-lbl { font-size: 0.8rem; color: var(--muted); }
+    .slider-num { font-size: 1.05rem; font-weight: 700; }
+    .slider-unit-lbl { font-size: 0.7rem; color: var(--muted); }
+    input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; outline: none; cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5); cursor: pointer; }
+    #tempSlider     { background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); }
+    #humidSlider    { background: linear-gradient(to right, #94a3b8, #60a5fa); }
+    #humidSlider2   { background: linear-gradient(to right, #94a3b8, #60a5fa); }
+    #weekTempSlider { background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); }
+    .tgl-lbl { font-size: 0.76rem; color: var(--muted); margin-bottom: 7px; margin-top: 14px; }
+    .tgl-group { display: flex; gap: 5px; }
+    .tgl { flex: 1; padding: 6px 4px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 0.72rem; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.12s; white-space: nowrap; }
+    .tgl:hover { border-color: var(--accent); }
+    .tgl.active { border-color: var(--accent); background: rgba(108,142,245,0.1); color: var(--text); }
+    .tgl-icon { display: block; font-size: 0.9rem; margin-bottom: 2px; }
+    .shade-btn { width: 100%; margin-top: 10px; padding: 8px 12px; font-size: 0.78rem; font-weight: 600; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; text-align: left; transition: all 0.12s; }
+    .shade-btn.active { border-color: rgba(74,222,128,0.5); background: rgba(74,222,128,0.07); color: #4ade80; }
+
+    /* ── Pool ── */
+    .pool-status { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px; }
+    .pool-status.great    { border-color: rgba(74,222,128,0.4);  background: rgba(74,222,128,0.06); }
+    .pool-status.good     { border-color: rgba(163,230,53,0.4);   background: rgba(163,230,53,0.05); }
+    .pool-status.marginal { border-color: rgba(251,146,60,0.4);   background: rgba(251,146,60,0.05); }
+    .pool-status.cold     { border-color: rgba(96,165,250,0.4);   background: rgba(96,165,250,0.05); }
+    .pool-status.no-go    { border-color: var(--border); }
     .pool-emoji { font-size: 2rem; flex-shrink: 0; line-height: 1; }
     .pool-main { flex: 1; }
-    .pool-verdict { font-size: 0.92rem; font-weight: 700; color: var(--text); margin-bottom: 3px; }
-    .pool-sub { font-size: 0.72rem; color: var(--muted); }
-    .pool-temp-badge { font-size: 1.1rem; font-weight: 800; text-align: right; flex-shrink: 0; }
+    .pool-verdict { font-size: 0.9rem; font-weight: 700; }
+    .pool-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .pool-temp-badge { font-size: 1.05rem; font-weight: 800; text-align: right; flex-shrink: 0; }
     .pool-temp-label { font-size: 0.6rem; color: var(--muted); text-align: right; }
-    .pool-inputs { display: flex; flex-direction: column; gap: 12px; }
-    #coldTherapyNote { margin-bottom: 12px; }
-    .cold-therapy-note { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 8px; border: 1.5px solid; font-size: 0.75rem; line-height: 1.5; }
-    .ct-safe { border-color: rgba(96,165,250,0.45); background: rgba(96,165,250,0.06); }
-    .ct-warn { border-color: rgba(251,146,60,0.5);  background: rgba(251,146,60,0.06); }
-    .ct-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    .cold-therapy-note { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 10px; font-size: 0.75rem; line-height: 1.5; margin-bottom: 14px; border: 1px solid; }
+    .ct-safe { border-color: rgba(96,165,250,0.35); background: rgba(96,165,250,0.05); }
+    .ct-warn { border-color: rgba(251,146,60,0.4);  background: rgba(251,146,60,0.05); }
+    .ct-icon { font-size: 1rem; flex-shrink: 0; }
     .ct-label { font-weight: 700; color: var(--text); }
     .ct-note  { color: var(--muted); }
 
-    /* Advice */
-    .advice { font-size: 0.84rem; color: var(--muted); line-height: 1.6; }
-    .advice strong { color: var(--text); }
+    /* ── Trip tab ── */
+    .trip-section-label { font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 6px; }
+    .trip-row { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; }
+    .trip-row:last-of-type { margin-bottom: 0; }
+    input[type="datetime-local"] { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 10px; color: var(--text); font-size: 0.78rem; outline: none; min-width: 0; color-scheme: dark; }
+    input[type="datetime-local"]:focus { border-color: var(--accent); }
+    .trip-mini-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.72rem; color: var(--muted); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    .trip-mini-btn:hover { border-color: var(--accent); color: var(--text); }
+    .add-return-btn { width: 100%; background: transparent; border: 1.5px dashed var(--border); border-radius: 10px; padding: 9px 12px; color: var(--muted); font-size: 0.78rem; cursor: pointer; text-align: left; }
+    .add-return-btn:hover { border-color: var(--accent); color: var(--text); }
+    #tripForecastGrid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; margin-bottom: 12px; align-items: start; }
+    .trip-fcol { background: var(--surface2); border-radius: 12px; padding: 14px; }
+    .trip-fcol-label { font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+    .trip-fcol-conditions { font-size: 0.7rem; color: var(--muted); margin-bottom: 10px; }
+    .trip-outfit-chips { display: flex; flex-direction: column; gap: 5px; }
+    .trip-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; border: 1px solid; width: fit-content; }
+    .trip-chip.essential { border-color: rgba(74,222,128,0.35); background: rgba(74,222,128,0.06); color: #4ade80; }
+    .trip-chip.optional  { border-color: rgba(251,146,60,0.35);  background: rgba(251,146,60,0.06);  color: #fb923c; }
+    .trip-chip-icon { font-size: 0.95rem; }
+    .trip-big-arrow { color: var(--muted); font-size: 1rem; display: flex; align-items: center; padding-top: 38px; }
+    .layering-note { padding: 12px 14px; background: var(--surface2); border-radius: 10px; border-left: 3px solid var(--accent); font-size: 0.79rem; color: var(--muted); line-height: 1.55; }
+    .layering-note strong { color: var(--text); }
+    .no-forecast-note { font-size: 0.76rem; color: var(--muted); text-align: center; padding: 14px; font-style: italic; }
 
-    /* Matrix */
-    .matrix-wrap { overflow-x: auto; }
-    table.matrix { border-collapse: separate; border-spacing: 4px; min-width: 720px; }
-    .matrix th { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 6px 4px; text-align: center; }
-    .matrix td { border-radius: 8px; padding: 8px 5px; text-align: center; min-width: 82px; vertical-align: middle; }
-    .matrix .rlabel { text-align: right; padding-right: 12px; font-size: 0.72rem; font-weight: 600; color: var(--text); white-space: nowrap; background: transparent !important; }
-    .cell-comfort { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.95); display: block; line-height: 1.3; }
-    .cell-top { font-size: 0.6rem; color: rgba(255,255,255,0.82); display: block; }
-    .cell-bot { font-size: 0.6rem; color: rgba(255,255,255,0.7);  display: block; }
-    .cell-fab { font-size: 0.58rem; color: rgba(255,255,255,0.58); display: block; margin-top: 2px; letter-spacing: 0.04em; }
+    /* ── Chart tab ── */
+    .matrix-ctrl-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .matrix-ctrl-row label { font-size: 0.76rem; color: var(--muted); font-weight: 500; white-space: nowrap; }
+    .matrix-wrap { overflow-x: auto; margin-top: 14px; }
+    table.matrix { border-collapse: separate; border-spacing: 4px; min-width: 660px; }
+    .matrix th { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 6px 4px; text-align: center; }
+    .matrix td { border-radius: 8px; padding: 8px 4px; text-align: center; min-width: 76px; vertical-align: middle; }
+    .matrix .rlabel { text-align: right; padding-right: 10px; font-size: 0.72rem; font-weight: 600; color: var(--text); white-space: nowrap; background: transparent !important; }
+    .cell-comfort { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.95); display: block; line-height: 1.3; }
+    .cell-top { font-size: 0.58rem; color: rgba(255,255,255,0.8); display: block; }
+    .cell-bot { font-size: 0.58rem; color: rgba(255,255,255,0.7); display: block; }
+    .cell-fab { font-size: 0.55rem; color: rgba(255,255,255,0.55); display: block; margin-top: 2px; }
     .ec-arctic   { background: #1e3a8a; } .ec-very-cold { background: #1d4ed8; } .ec-cold  { background: #2563eb; }
     .ec-chilly   { background: #0284c7; } .ec-cool      { background: #0891b2; } .ec-mild  { background: #047857; }
     .ec-comfy    { background: #15803d; } .ec-warm      { background: #b45309; } .ec-hot   { background: #b91c1c; }
     .ec-very-hot { background: #7f1d1d; }
-    .matrix-ctrl-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .matrix-ctrl-row label { font-size: 0.75rem; color: var(--muted); font-weight: 500; white-space: nowrap; }
-    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; align-items: center; }
-    .legend span { font-size: 0.68rem; color: var(--muted); }
-    .legend-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
-
-    @media (max-width: 720px) {
-      .today-layout { grid-template-columns: 1fr; }
-      .comfort-card-inner { flex-direction: column; }
-      .comfort-divider { display: none; }
-    }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .legend span { font-size: 0.67rem; color: var(--muted); }
+    .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>🌡️ What to Wear</h1>
+  <span class="app-name">Feels Like</span>
   <div class="unit-toggle">
     <button class="unit-btn active" id="btnF" onclick="setUnit('F')">°F</button>
     <button class="unit-btn" id="btnC" onclick="setUnit('C')">°C</button>
@@ -239,211 +194,196 @@
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('today')">Today</button>
-  <button class="tab" onclick="showTab('matrix')">Reference Chart</button>
+  <button class="tab" onclick="showTab('trip')">Trip</button>
+  <button class="tab" onclick="showTab('chart')">Chart</button>
 </div>
 
 <!-- ═══ TODAY TAB ═══ -->
 <div id="tab-today">
-  <div class="today-layout">
 
-    <!-- LEFT PANEL -->
-    <div class="left-col">
-
-      <!-- Weather -->
-      <div class="card">
-        <div class="section-label" id="weatherLabel">Weather</div>
-
-        <!-- Location search -->
-        <div class="loc-row">
-          <input type="text" id="locInput" class="loc-input" placeholder="Search city, state…">
-          <button class="loc-icon-btn" onclick="searchLocation()" title="Search">🔍</button>
-          <button class="loc-icon-btn" onclick="fetchLiveWeather()" title="Use current location">📍</button>
-        </div>
-        <div class="loc-status" id="locStatus">
-          <div class="loc-dot" id="locDot"></div>
-          <span id="locText">Use 📍 for live data or search a city</span>
-        </div>
-
-        <div class="slider-row">
-          <div class="slider-header">
-            <span class="slider-label">Temperature</span>
-            <div><span class="slider-val" id="tempDisplay">65</span><span class="slider-unit" id="tempUnitLbl">°F</span></div>
-          </div>
-          <input type="range" id="tempSlider" min="-10" max="105" value="65">
-        </div>
-
-        <div class="slider-row">
-          <div class="slider-header">
-            <span class="slider-label">Humidity</span>
-            <div><span class="slider-val" id="humidDisplay">45</span><span class="slider-unit">%</span></div>
-          </div>
-          <input type="range" id="humidSlider" min="0" max="100" value="45">
-        </div>
-
-        <div class="weather-row">
-          <div class="weather-row-label">Wind</div>
-          <div class="tgl-group">
-            <button class="tgl active" id="wind-calm"     onclick="setWind('calm')">Calm</button>
-            <button class="tgl"        id="wind-light"    onclick="setWind('light')">Light</button>
-            <button class="tgl"        id="wind-moderate" onclick="setWind('moderate')">Mod</button>
-            <button class="tgl"        id="wind-strong"   onclick="setWind('strong')">Strong</button>
-          </div>
-        </div>
-
-        <div class="weather-row">
-          <div class="weather-row-label">Sky / Sun</div>
-          <div class="tgl-group">
-            <button class="tgl"        id="sun-full"     onclick="setSun('full')"><span class="tgl-icon">☀️</span>Full Sun</button>
-            <button class="tgl active" id="sun-partial"  onclick="setSun('partial')"><span class="tgl-icon">🌤️</span>Partly</button>
-            <button class="tgl"        id="sun-overcast" onclick="setSun('overcast')"><span class="tgl-icon">☁️</span>Overcast</button>
-          </div>
-        </div>
-
-        <div class="weather-row" style="margin-bottom:0;">
-          <div class="weather-row-label">Route shade</div>
-          <button class="tgl shade-tgl" id="shadedBtn" onclick="setShaded()">🌳 Mostly shaded route</button>
-        </div>
-      </div>
-
-      <!-- Activity -->
-      <div class="card">
-        <div class="section-label">Activity</div>
-        <div class="act-grid">
-          <button class="act-btn active" onclick="setActivity('short-walk')" id="act-short-walk"><span class="act-icon">🚶</span><span class="act-name">Short Walk</span></button>
-          <button class="act-btn"        onclick="setActivity('long-walk')"  id="act-long-walk"><span class="act-icon">🗺️</span><span class="act-name">Long Walk</span></button>
-          <button class="act-btn"        onclick="setActivity('run')"        id="act-run"><span class="act-icon">🏃</span><span class="act-name">Run</span></button>
-          <button class="act-btn"        onclick="setActivity('bike')"       id="act-bike"><span class="act-icon">🚲</span><span class="act-name">Bike</span></button>
-          <button class="act-btn"        onclick="setActivity('scooter')"    id="act-scooter"><span class="act-icon">🛴</span><span class="act-name">Scooter</span></button>
-          <button class="act-btn"        onclick="setActivity('moped')"      id="act-moped"><span class="act-icon">🛵</span><span class="act-name">Moped</span></button>
-        </div>
-      </div>
-
-      <!-- Trip Planning -->
-      <div class="card">
-        <div class="section-label">Trip Planning</div>
-        <div class="trip-side-label">Leaving</div>
-        <div class="trip-dep-row">
-          <input type="datetime-local" id="departureInput" onchange="onDepartureChange()">
-          <button class="trip-mini-btn" onclick="setDepartureNow()" title="Set to right now">Now</button>
-        </div>
-        <div class="trip-side-label">Returning</div>
-        <div class="trip-ret-row">
-          <button class="add-return-btn" id="addRetBtn" onclick="showReturnInput()">+ Set return time</button>
-          <div id="returnInputWrap" style="display:none; flex:1; display:none;">
-            <div style="display:flex; gap:4px;">
-              <input type="datetime-local" id="returnInput" onchange="onReturnChange()">
-              <button class="trip-mini-btn" onclick="clearReturn()" title="Clear return time">✕</button>
-            </div>
-          </div>
-        </div>
-      </div>
+  <!-- Location -->
+  <div class="card">
+    <div class="loc-row">
+      <input type="text" id="locInput" class="loc-input" placeholder="Search city…">
+      <button class="loc-btn" onclick="searchLocation()" title="Search">🔍</button>
+      <button class="loc-btn" onclick="fetchLiveWeather()" title="Use current location">📍</button>
     </div>
-
-    <!-- RIGHT PANEL -->
-    <div class="right-col">
-
-      <!-- Comfortability -->
-      <div class="card">
-        <div class="section-label">Effective Comfortability</div>
-        <div class="comfort-card-inner">
-          <div class="comfort-label-block">
-            <div>
-              <span class="comfort-emoji" id="comfortEmoji">🙂</span>
-              <span class="comfort-word"  id="comfortWord" style="color:#4ade80;">MILD</span>
-            </div>
-            <div class="comfort-temps" id="comfortTemps"></div>
-          </div>
-          <div class="comfort-divider"></div>
-          <div class="breakdown" id="breakdownEl"></div>
-        </div>
-        <div class="comfort-bar-wrap">
-          <div class="comfort-bar"><div class="comfort-marker" id="comfortMarker"></div></div>
-          <div class="comfort-bar-labels">
-            <span>Freezing</span><span>Cold</span><span>Mild</span><span>Warm</span><span>Hot</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Trip Forecast (shown when return time set) -->
-      <div class="card" id="tripForecastCard" style="display:none;">
-        <div class="section-label">Trip Forecast</div>
-        <div class="trip-forecast-grid" id="tripForecastGrid"></div>
-        <div class="layering-note" id="layeringNote"></div>
-      </div>
-
-      <!-- Outfit + Fabric -->
-      <div class="card">
-        <div class="section-label">Outfit</div>
-        <div class="outfit-grid" id="outfitGrid"></div>
-        <div class="fabric-banner" id="fabricBanner"></div>
-      </div>
-
-      <!-- Pool -->
-      <div class="card">
-        <div class="section-label">Likely Pool Comfortability</div>
-        <div class="pool-status" id="poolStatus"></div>
-        <div id="coldTherapyNote"></div>
-        <div class="pool-inputs">
-          <div class="weather-row" style="margin-bottom:0;">
-            <div class="slider-header">
-              <span class="slider-label">Past 7-day avg temp</span>
-              <div><span class="slider-val" id="weekTempDisplay">72</span><span class="slider-unit" id="weekTempUnitLbl">°F</span></div>
-            </div>
-            <input type="range" id="weekTempSlider" min="-10" max="105" value="72">
-          </div>
-          <div class="weather-row" style="margin-bottom:0;">
-            <div class="weather-row-label">Recent sun (past week)</div>
-            <div class="tgl-group">
-              <button class="tgl"        id="wsun-sunny"  onclick="setWeekSun('sunny')"><span class="tgl-icon">☀️</span>Sunny</button>
-              <button class="tgl active" id="wsun-mixed"  onclick="setWeekSun('mixed')"><span class="tgl-icon">🌤️</span>Mixed</button>
-              <button class="tgl"        id="wsun-cloudy" onclick="setWeekSun('cloudy')"><span class="tgl-icon">☁️</span>Cloudy</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Advice -->
-      <div class="card"><div class="advice" id="adviceEl"></div></div>
+    <div class="loc-status" id="locStatus">
+      <div class="loc-dot" id="locDot"></div>
+      <span id="locText">Use 📍 for live weather or search a city</span>
     </div>
   </div>
+
+  <!-- Hero -->
+  <div class="card">
+    <div class="hero">
+      <span class="hero-emoji" id="comfortEmoji">🙂</span>
+      <div class="hero-word" id="comfortWord" style="color:#4ade80;">MILD</div>
+      <div class="hero-sub" id="comfortTemps">feels like <strong>65°F</strong> · actual 65°F</div>
+      <div class="comfort-bar-wrap">
+        <div class="comfort-bar"><div class="comfort-marker" id="comfortMarker"></div></div>
+        <div class="comfort-bar-labels"><span>Freezing</span><span>Cold</span><span>Mild</span><span>Warm</span><span>Hot</span></div>
+      </div>
+    </div>
+    <div class="hero-tip" id="adviceEl"></div>
+    <button class="breakdown-toggle" id="breakdownToggle" onclick="toggleBreakdown()">see why ▾</button>
+    <div class="breakdown hidden" id="breakdownEl"></div>
+  </div>
+
+  <!-- Activity -->
+  <div class="card">
+    <div class="card-label">Activity</div>
+    <div class="act-strip">
+      <button class="act-pill active" onclick="setActivity('short-walk')" id="act-short-walk"><span class="act-icon">🚶</span>Short Walk</button>
+      <button class="act-pill"        onclick="setActivity('long-walk')"  id="act-long-walk"><span class="act-icon">🗺️</span>Long Walk</button>
+      <button class="act-pill"        onclick="setActivity('run')"        id="act-run"><span class="act-icon">🏃</span>Run</button>
+      <button class="act-pill"        onclick="setActivity('bike')"       id="act-bike"><span class="act-icon">🚲</span>Bike</button>
+      <button class="act-pill"        onclick="setActivity('scooter')"    id="act-scooter"><span class="act-icon">🛴</span>Scooter</button>
+      <button class="act-pill"        onclick="setActivity('moped')"      id="act-moped"><span class="act-icon">🛵</span>Moped</button>
+    </div>
+  </div>
+
+  <!-- Outfit -->
+  <div class="card">
+    <div class="card-label">Outfit</div>
+    <div class="outfit-list" id="outfitGrid"></div>
+    <div class="fabric-note" id="fabricBanner"></div>
+  </div>
+
+  <!-- Conditions (collapsible) -->
+  <div class="card">
+    <div class="collapsible-header" onclick="toggleSection('cond')">
+      <div class="card-label">Conditions <span id="weatherLabel" style="font-style:italic;text-transform:none;letter-spacing:0;font-weight:400;margin-left:4px;"></span></div>
+      <span class="coll-arrow" id="condArrow">▾</span>
+    </div>
+    <div class="coll-body" id="condBody">
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-lbl">Temperature</span>
+          <div><span class="slider-num" id="tempDisplay">65</span><span class="slider-unit-lbl" id="tempUnitLbl">°F</span></div>
+        </div>
+        <input type="range" id="tempSlider" min="-10" max="105" value="65">
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-lbl">Humidity</span>
+          <div><span class="slider-num" id="humidDisplay">45</span><span class="slider-unit-lbl">%</span></div>
+        </div>
+        <input type="range" id="humidSlider" min="0" max="100" value="45">
+      </div>
+      <div class="tgl-lbl">Wind</div>
+      <div class="tgl-group">
+        <button class="tgl active" id="wind-calm"     onclick="setWind('calm')">Calm</button>
+        <button class="tgl"        id="wind-light"    onclick="setWind('light')">Light</button>
+        <button class="tgl"        id="wind-moderate" onclick="setWind('moderate')">Mod</button>
+        <button class="tgl"        id="wind-strong"   onclick="setWind('strong')">Strong</button>
+      </div>
+      <div class="tgl-lbl">Sky</div>
+      <div class="tgl-group">
+        <button class="tgl"        id="sun-full"     onclick="setSun('full')"><span class="tgl-icon">☀️</span>Full Sun</button>
+        <button class="tgl active" id="sun-partial"  onclick="setSun('partial')"><span class="tgl-icon">🌤️</span>Partly</button>
+        <button class="tgl"        id="sun-overcast" onclick="setSun('overcast')"><span class="tgl-icon">☁️</span>Overcast</button>
+      </div>
+      <button class="shade-btn" id="shadedBtn" onclick="setShaded()">🌳 Mostly shaded route</button>
+    </div>
+  </div>
+
+  <!-- Pool (collapsible) -->
+  <div class="card">
+    <div class="collapsible-header" onclick="toggleSection('pool')">
+      <div class="card-label">Pool</div>
+      <span class="coll-arrow" id="poolArrow">▾</span>
+    </div>
+    <div class="coll-body" id="poolBody">
+      <div id="poolStatus" style="margin-top:2px;"></div>
+      <div id="coldTherapyNote"></div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-lbl">Past 7-day avg temp</span>
+          <div><span class="slider-num" id="weekTempDisplay">72</span><span class="slider-unit-lbl" id="weekTempUnitLbl">°F</span></div>
+        </div>
+        <input type="range" id="weekTempSlider" min="-10" max="105" value="72">
+      </div>
+      <div class="tgl-lbl">Recent sun (past week)</div>
+      <div class="tgl-group">
+        <button class="tgl"        id="wsun-sunny"  onclick="setWeekSun('sunny')"><span class="tgl-icon">☀️</span>Sunny</button>
+        <button class="tgl active" id="wsun-mixed"  onclick="setWeekSun('mixed')"><span class="tgl-icon">🌤️</span>Mixed</button>
+        <button class="tgl"        id="wsun-cloudy" onclick="setWeekSun('cloudy')"><span class="tgl-icon">☁️</span>Cloudy</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- ═══ MATRIX TAB ═══ -->
-<div id="tab-matrix" style="display:none; max-width: 1040px;">
-  <div class="card" style="margin-bottom: 14px;">
-    <div class="matrix-ctrl-row">
-      <label>Humidity</label>
-      <input type="range" id="humidSlider2" min="0" max="100" value="45" style="width:110px; flex-shrink:0;">
-      <span style="font-size:0.85rem; font-weight:700; min-width:36px;"><span id="humidDisplay2">45</span>%</span>
-      <label style="margin-left:6px;">Wind</label>
-      <div class="tgl-group" style="gap:3px;">
-        <button class="tgl active" id="mwind-calm"     onclick="setMatrixWind('calm')"     style="padding:4px 6px;font-size:0.65rem;">Calm</button>
-        <button class="tgl"        id="mwind-light"    onclick="setMatrixWind('light')"    style="padding:4px 6px;font-size:0.65rem;">Light</button>
-        <button class="tgl"        id="mwind-moderate" onclick="setMatrixWind('moderate')" style="padding:4px 6px;font-size:0.65rem;">Mod</button>
-        <button class="tgl"        id="mwind-strong"   onclick="setMatrixWind('strong')"   style="padding:4px 6px;font-size:0.65rem;">Strong</button>
+<!-- ═══ TRIP TAB ═══ -->
+<div id="tab-trip" style="display:none;">
+
+  <div class="card">
+    <div class="card-label">Trip Planning</div>
+    <div class="trip-section-label">Leaving</div>
+    <div class="trip-row">
+      <input type="datetime-local" id="departureInput" onchange="onDepartureChange()">
+      <button class="trip-mini-btn" onclick="setDepartureNow()">Now</button>
+    </div>
+    <div class="trip-section-label">Returning</div>
+    <div class="trip-row">
+      <button class="add-return-btn" id="addRetBtn" onclick="showReturnInput()">+ Set return time</button>
+      <div id="returnInputWrap" style="display:none; flex:1;">
+        <div style="display:flex; gap:6px;">
+          <input type="datetime-local" id="returnInput" onchange="onReturnChange()">
+          <button class="trip-mini-btn" onclick="clearReturn()">✕</button>
+        </div>
       </div>
-      <label style="margin-left:6px;">Sun</label>
-      <div class="tgl-group" style="gap:3px;">
-        <button class="tgl"        id="msun-full"     onclick="setMatrixSun('full')"     style="padding:4px 6px;font-size:0.65rem;">☀️ Full</button>
-        <button class="tgl active" id="msun-partial"  onclick="setMatrixSun('partial')"  style="padding:4px 6px;font-size:0.65rem;">🌤️ Part</button>
-        <button class="tgl"        id="msun-overcast" onclick="setMatrixSun('overcast')" style="padding:4px 6px;font-size:0.65rem;">☁️ Over</button>
-      </div>
-      <button class="tgl shade-tgl" id="mShadedBtn" onclick="setMatrixShaded()" style="padding:4px 10px;font-size:0.65rem;width:auto;">🌳 Shaded</button>
     </div>
   </div>
+
+  <div class="card" id="tripForecastCard" style="display:none;">
+    <div class="card-label">Forecast Comparison</div>
+    <div id="tripForecastGrid"></div>
+    <div class="layering-note" id="layeringNote"></div>
+  </div>
+
+</div>
+
+<!-- ═══ CHART TAB ═══ -->
+<div id="tab-matrix" style="display:none;">
+
   <div class="card">
-    <div class="section-label">All Activities × Temperatures</div>
-    <div class="matrix-wrap"><table class="matrix" id="matrixTable"></table></div>
+    <div class="card-label">Reference Chart</div>
+    <div class="matrix-ctrl-row">
+      <label>Humidity</label>
+      <input type="range" id="humidSlider2" min="0" max="100" value="45" style="width:80px; flex-shrink:0;">
+      <span style="font-size:0.85rem; font-weight:700; min-width:32px;"><span id="humidDisplay2">45</span>%</span>
+      <label>Wind</label>
+      <div class="tgl-group" style="gap:3px; flex:none;">
+        <button class="tgl active" id="mwind-calm"     onclick="setMatrixWind('calm')"     style="padding:4px 7px;font-size:0.65rem;">Calm</button>
+        <button class="tgl"        id="mwind-light"    onclick="setMatrixWind('light')"    style="padding:4px 7px;font-size:0.65rem;">Light</button>
+        <button class="tgl"        id="mwind-moderate" onclick="setMatrixWind('moderate')" style="padding:4px 7px;font-size:0.65rem;">Mod</button>
+        <button class="tgl"        id="mwind-strong"   onclick="setMatrixWind('strong')"   style="padding:4px 7px;font-size:0.65rem;">Strong</button>
+      </div>
+    </div>
+    <div class="matrix-ctrl-row" style="margin-top:8px;">
+      <label>Sky</label>
+      <div class="tgl-group" style="gap:3px; flex:none;">
+        <button class="tgl"        id="msun-full"     onclick="setMatrixSun('full')"     style="padding:4px 7px;font-size:0.65rem;">☀️ Full</button>
+        <button class="tgl active" id="msun-partial"  onclick="setMatrixSun('partial')"  style="padding:4px 7px;font-size:0.65rem;">🌤️ Part</button>
+        <button class="tgl"        id="msun-overcast" onclick="setMatrixSun('overcast')" style="padding:4px 7px;font-size:0.65rem;">☁️ Over</button>
+      </div>
+      <button class="tgl" id="mShadedBtn" onclick="setMatrixShaded()" style="padding:4px 10px;font-size:0.65rem;flex:none;">🌳 Shaded</button>
+    </div>
+    <div class="matrix-wrap">
+      <table class="matrix" id="matrixTable"></table>
+    </div>
     <div class="legend">
-      <span>Feel →</span>
       <span><span class="legend-dot" style="background:#1d4ed8"></span>Very Cold</span>
       <span><span class="legend-dot" style="background:#0284c7"></span>Chilly</span>
       <span><span class="legend-dot" style="background:#047857"></span>Mild</span>
       <span><span class="legend-dot" style="background:#b45309"></span>Warm</span>
       <span><span class="legend-dot" style="background:#b91c1c"></span>Hot</span>
-      <span style="margin-left:8px; color:#94a3b8; font-style:italic;">L = Linen · C = Cotton</span>
+      <span style="font-style:italic;">L = Linen · C = Cotton</span>
     </div>
   </div>
+
 </div>
 
 <script>
@@ -588,12 +528,12 @@
     else if (eff < 70) msg += 'Comfortable. Short sleeves work well here.';
     else if (eff < 80) msg += 'Warm. Light clothing — shorts are a great choice.';
     else               msg += 'Hot. Go as light as possible and stay hydrated.';
-    if (act === 'moped')         msg += ' <strong>Moped headwind is significant</strong> — even mild days feel much colder at speed.';
-    else if (act === 'scooter')  msg += ' Scooter speed means real wind chill and no body heat — dress warmer than you\'d expect.';
-    else if (act === 'bike')     msg += ' Biking creates a constant breeze — you\'ll feel cooler than standing still.';
-    else if (act === 'run')      msg += ' <strong>You heat up fast running</strong> — always dress lighter than you think you need to.';
-    else if (act === 'long-walk')msg += ' A long walk warms you up noticeably once you\'re moving.';
-    if (w === 'strong')   msg += ' <strong>Strong wind today</strong> — factor in extra chill when exposed.';
+    if (act === 'moped')          msg += ' <strong>Moped headwind is significant</strong> — even mild days feel much colder at speed.';
+    else if (act === 'scooter')   msg += ' Scooter speed means real wind chill and no body heat — dress warmer than you\'d expect.';
+    else if (act === 'bike')      msg += ' Biking creates a constant breeze — you\'ll feel cooler than standing still.';
+    else if (act === 'run')       msg += ' <strong>You heat up fast running</strong> — always dress lighter than you think you need to.';
+    else if (act === 'long-walk') msg += ' A long walk warms you up noticeably once you\'re moving.';
+    if (w === 'strong')      msg += ' <strong>Strong wind today</strong> — factor in extra chill when exposed.';
     else if (w === 'moderate') msg += ' Moderate wind will make shaded or open stretches feel cooler.';
     if (s === 'overcast') msg += ' No sun means no radiant warmth — dress accordingly.';
     return msg;
@@ -619,11 +559,11 @@
   }
 
   function toConditions(w, dt) {
-    const mph   = w.windMph;
-    const windK = mph < 6 ? 'calm' : mph < 13 ? 'light' : mph < 21 ? 'moderate' : 'strong';
-    const h     = dt ? dt.getHours() : 12;
+    const mph    = w.windMph;
+    const windK  = mph < 6 ? 'calm' : mph < 13 ? 'light' : mph < 21 ? 'moderate' : 'strong';
+    const h      = dt ? dt.getHours() : 12;
     const isNight = h < 7 || h >= 20;
-    const sunK  = isNight ? 'overcast' : (w.cloudCover < 25 ? 'full' : w.cloudCover < 65 ? 'partial' : 'overcast');
+    const sunK   = isNight ? 'overcast' : (w.cloudCover < 25 ? 'full' : w.cloudCover < 65 ? 'partial' : 'overcast');
     return { tempF: w.tempF, humidity: w.humidity, wind: windK, sun: sunK, isNight };
   }
 
@@ -655,8 +595,8 @@
     if (retTime <= depTime) { card.style.display = 'none'; return; }
 
     card.style.display = 'block';
-    const grid  = document.getElementById('tripForecastGrid');
-    const note  = document.getElementById('layeringNote');
+    const grid = document.getElementById('tripForecastGrid');
+    const note = document.getElementById('layeringNote');
 
     const depW = getWeatherAtHour(depTime);
     const retW = getWeatherAtHour(retTime);
@@ -700,7 +640,6 @@
 
   // ─── Trip time controls ───────────────────────────────────────────────────────
   function nowToInputStr() {
-    // Full current time (with minutes) for the datetime-local input display
     const d = new Date();
     const p = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -709,7 +648,7 @@
   function setDepartureNow() {
     departureIsNow = true;
     document.getElementById('departureInput').value = nowToInputStr();
-    document.getElementById('weatherLabel').textContent = 'Weather';
+    document.getElementById('weatherLabel').textContent = '';
     if (hourlyForecast) {
       const now = new Date();
       const w = getWeatherAtHour(now);
@@ -722,7 +661,6 @@
     document.getElementById('addRetBtn').style.display = 'none';
     const wrap = document.getElementById('returnInputWrap');
     wrap.style.display = 'flex';
-    // Default return to 2 hours from departure
     const dep = document.getElementById('departureInput').value;
     const base = dep ? new Date(dep) : new Date();
     base.setHours(base.getHours() + 2);
@@ -749,22 +687,20 @@
       const w = getWeatherAtHour(dt);
       if (w) { const c = toConditions(w, dt); tempF = c.tempF; humidity = c.humidity; wind = c.wind; sun = c.sun; syncUIFromState(); }
     }
-    const label = departureIsNow ? 'Weather' : `Forecast · ${dt.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' })}`;
+    const label = departureIsNow ? '' : `· ${dt.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' })}`;
     document.getElementById('weatherLabel').textContent = label;
     render(); renderTripForecast();
   }
 
-  function onReturnChange() {
-    renderTripForecast();
-  }
+  function onReturnChange() { renderTripForecast(); }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   function dT(tF) { return unit === 'F' ? `${tF}°F` : `${Math.round((tF-32)*5/9)}°C`; }
-  function markerPct(eff) { return Math.max(0, Math.min(100, ((eff-(-10))/(115))*100)); }
+  function markerPct(eff) { return Math.max(0, Math.min(100, ((eff - (-10)) / 115) * 100)); }
   function tempClass(eff) {
-    if (eff < 20) return 'ec-arctic';    if (eff < 30) return 'ec-very-cold'; if (eff < 40) return 'ec-cold';
-    if (eff < 50) return 'ec-chilly';   if (eff < 58) return 'ec-cool';      if (eff < 65) return 'ec-mild';
-    if (eff < 72) return 'ec-comfy';    if (eff < 80) return 'ec-warm';      if (eff < 88) return 'ec-hot';
+    if (eff < 20) return 'ec-arctic';  if (eff < 30) return 'ec-very-cold'; if (eff < 40) return 'ec-cold';
+    if (eff < 50) return 'ec-chilly';  if (eff < 58) return 'ec-cool';      if (eff < 65) return 'ec-mild';
+    if (eff < 72) return 'ec-comfy';   if (eff < 80) return 'ec-warm';      if (eff < 88) return 'ec-hot';
     return 'ec-very-hot';
   }
   function comfortShort(eff) {
@@ -777,11 +713,27 @@
     if (eff >= 68 && hum >= 50) return 'LINEN'; if (eff >= 72) return 'L/C'; return 'COTTON';
   }
 
+  // ─── UI helpers ──────────────────────────────────────────────────────────────
+  function toggleSection(id) {
+    const body  = document.getElementById(id + 'Body');
+    const arrow = document.getElementById(id + 'Arrow');
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    arrow.classList.toggle('open', !isOpen);
+  }
+
+  function toggleBreakdown() {
+    const bd  = document.getElementById('breakdownEl');
+    const btn = document.getElementById('breakdownToggle');
+    const hidden = bd.classList.toggle('hidden');
+    btn.textContent = hidden ? 'see why ▾' : 'see why ▴';
+  }
+
   // ─── Main render ─────────────────────────────────────────────────────────────
   function render() {
-    const eff = effTemp(tempF, humidity, activity, wind, sun, shaded);
-    const act = ACTS[activity];
-    const hAdj = humidAdj(tempF, humidity);
+    const eff     = effTemp(tempF, humidity, activity, wind, sun, shaded);
+    const act     = ACTS[activity];
+    const hAdj    = humidAdj(tempF, humidity);
     const windOff = Math.round(WIND_OFFSETS[wind] * act.windMult);
     const sunOff  = shaded ? 0 : SUN_OFFSETS[sun];
     const comfort = getComfort(eff);
@@ -789,8 +741,8 @@
     document.getElementById('comfortEmoji').textContent = comfort.emoji;
     const cw = document.getElementById('comfortWord');
     cw.textContent = comfort.word; cw.style.color = comfort.color;
-    document.getElementById('comfortTemps').innerHTML =
-      `<span>feels like <strong>${dT(eff)}</strong></span><span>actual <strong>${dT(tempF)}</strong></span>`;
+    document.getElementById('comfortTemps').innerHTML = `feels like <strong>${dT(eff)}</strong> · actual ${dT(tempF)}`;
+    document.getElementById('comfortMarker').style.left = markerPct(eff) + '%';
 
     let bhtml = `<div class="brow"><span>Actual temp</span><span class="bval">${dT(tempF)}</span></div>`;
     if (act.exert) bhtml += `<div class="brow"><span>Body heat</span><span class="bval hot-val">+${unit==='F'?act.exert:Math.round(act.exert*5/9)}°</span></div>`;
@@ -802,21 +754,19 @@
       bhtml += `<div class="brow"><span>Sun warmth</span><span class="bval sun-val">+${unit==='F'?sunOff:Math.round(sunOff*5/9)}°</span></div>`;
     if (hAdj) bhtml += `<div class="brow"><span>Humidity</span><span class="bval ${hAdj>0?'hot-val':'cold-val'}">${hAdj>0?'+':''}${unit==='F'?hAdj:Math.round(hAdj*5/9)}°</span></div>`;
     document.getElementById('breakdownEl').innerHTML = bhtml;
-    document.getElementById('comfortMarker').style.left = markerPct(eff) + '%';
 
     const outfit = getOutfit(eff, humidity);
-    document.getElementById('outfitGrid').innerHTML = outfit.map(i =>
-      `<div class="ocard ${i.l}"><div class="ocard-emoji">${i.e}</div><div class="ocard-name">${i.name}</div><div class="ocard-detail">${i.d}</div></div>`
-    ).join('');
+    document.getElementById('outfitGrid').innerHTML = outfit
+      .filter(i => i.l !== 'skip')
+      .map(i => `<div class="outfit-item"><div class="outfit-dot ${i.l}"></div><div class="outfit-icon">${i.e}</div><div><div class="outfit-name">${i.name}</div><div class="outfit-detail">${i.d}</div></div></div>`)
+      .join('');
 
     const fab = getFabric(eff, humidity);
-    document.getElementById('fabricBanner').className = `fabric-banner ${fab.cls}`;
-    document.getElementById('fabricBanner').innerHTML =
-      `<span class="fabric-icon">${fab.icon}</span><div class="fabric-text-wrap"><div class="fabric-choice">${fab.choice}</div><div class="fabric-reason">${fab.reason}</div></div>`;
+    document.getElementById('fabricBanner').innerHTML = `${fab.icon} <strong>${fab.choice}</strong> — ${fab.reason}`;
 
-    const pt = estimatePoolTemp(weekTempF, weekSun, tempF, sun);
+    const pt   = estimatePoolTemp(weekTempF, weekSun, tempF, sun);
     const pool = getPoolInfo(pt, tempF, wind, sun);
-    const tbc = pool.poolCls==='great'?'#4ade80':pool.poolCls==='good'?'#a3e635':pool.poolCls==='cold'?'#60a5fa':'#fb923c';
+    const tbc  = pool.poolCls==='great'?'#4ade80':pool.poolCls==='good'?'#a3e635':pool.poolCls==='cold'?'#60a5fa':'#fb923c';
     document.getElementById('poolStatus').className = `pool-status ${pool.poolCls}`;
     document.getElementById('poolStatus').innerHTML =
       `<div class="pool-emoji">${pool.emoji}</div><div class="pool-main"><div class="pool-verdict">${pool.verdict}</div><div class="pool-sub">${pool.sub}</div></div><div><div class="pool-temp-badge" style="color:${tbc}">~${dT(pt)}</div><div class="pool-temp-label">est. water</div></div>`;
@@ -829,7 +779,7 @@
 
   // ─── Matrix ──────────────────────────────────────────────────────────────────
   function renderMatrix() {
-    const hum  = parseInt(document.getElementById('humidSlider2').value);
+    const hum = parseInt(document.getElementById('humidSlider2').value);
     const TEMPS = [20, 30, 40, 50, 60, 70, 80, 90];
     const ACTS_ORDER = ['short-walk', 'long-walk', 'run', 'bike', 'scooter', 'moped'];
     let html = '<thead><tr><th></th>';
@@ -839,11 +789,11 @@
       const a = ACTS[act];
       html += `<tr><td class="rlabel">${a.icon} ${a.name}</td>`;
       TEMPS.forEach(t => {
-        const eff = effTemp(t, hum, act, matrixWind, matrixSun, matrixShaded);
-        const cls = tempClass(eff);
+        const eff  = effTemp(t, hum, act, matrixWind, matrixSun, matrixShaded);
+        const cls  = tempClass(eff);
         const effD = unit==='F'?`${eff}°F`:Math.round((eff-32)*5/9)+'°C';
-        const top = eff<60?'long sleeve':eff<82?'short sleeve':'tank';
-        const bot = eff<48?'warm pants':eff<65?'pants':eff<75?'shorts?':'shorts';
+        const top  = eff<60?'long sleeve':eff<82?'short sleeve':'tank';
+        const bot  = eff<48?'warm pants':eff<65?'pants':eff<75?'shorts?':'shorts';
         const coat = eff<45?'🧥 ':'';
         html += `<td class="${cls}" title="${a.name} @ ${unit==='F'?t+'°F':Math.round((t-32)*5/9)+'°C'} → ${effD}">
           <span class="cell-comfort">${comfortShort(eff)}</span>
@@ -861,14 +811,14 @@
   // ─── State setters ────────────────────────────────────────────────────────────
   function setActivity(act) {
     activity = act;
-    document.querySelectorAll('.act-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.act-pill').forEach(b => b.classList.remove('active'));
     document.getElementById('act-'+act).classList.add('active');
     render(); renderTripForecast();
   }
-  function setWind(w)     { wind = w;     ['calm','light','moderate','strong'].forEach(x => document.getElementById('wind-'+x).classList.toggle('active',x===w)); render(); renderTripForecast(); }
-  function setSun(s)      { sun = s;      ['full','partial','overcast'].forEach(x => document.getElementById('sun-'+x).classList.toggle('active',x===s)); render(); renderTripForecast(); }
-  function setWeekSun(s)  { weekSun = s;  ['sunny','mixed','cloudy'].forEach(x => document.getElementById('wsun-'+x).classList.toggle('active',x===s)); render(); }
-  function setShaded()    { shaded = !shaded; document.getElementById('shadedBtn').classList.toggle('active',shaded); render(); renderTripForecast(); }
+  function setWind(w)    { wind = w;    ['calm','light','moderate','strong'].forEach(x => document.getElementById('wind-'+x).classList.toggle('active',x===w)); render(); renderTripForecast(); }
+  function setSun(s)     { sun = s;     ['full','partial','overcast'].forEach(x => document.getElementById('sun-'+x).classList.toggle('active',x===s)); render(); renderTripForecast(); }
+  function setWeekSun(s) { weekSun = s; ['sunny','mixed','cloudy'].forEach(x => document.getElementById('wsun-'+x).classList.toggle('active',x===s)); render(); }
+  function setShaded()   { shaded = !shaded; document.getElementById('shadedBtn').classList.toggle('active',shaded); render(); renderTripForecast(); }
   function setMatrixShaded() { matrixShaded = !matrixShaded; document.getElementById('mShadedBtn').classList.toggle('active',matrixShaded); renderMatrix(); }
   function setMatrixWind(w)  { matrixWind = w; ['calm','light','moderate','strong'].forEach(x => document.getElementById('mwind-'+x).classList.toggle('active',x===w)); renderMatrix(); }
   function setMatrixSun(s)   { matrixSun = s;  ['full','partial','overcast'].forEach(x => document.getElementById('msun-'+x).classList.toggle('active',x===s)); renderMatrix(); }
@@ -893,10 +843,11 @@
   }
 
   function showTab(tab) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',(tab==='today'&&i===0)||(tab==='matrix'&&i===1)));
-    document.getElementById('tab-today').style.display  = tab==='today'  ? 'block' : 'none';
-    document.getElementById('tab-matrix').style.display = tab==='matrix' ? 'block' : 'none';
-    if (tab==='matrix') renderMatrix();
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['today','trip','chart'][i] === tab));
+    document.getElementById('tab-today').style.display  = tab === 'today' ? 'block' : 'none';
+    document.getElementById('tab-trip').style.display   = tab === 'trip'  ? 'block' : 'none';
+    document.getElementById('tab-matrix').style.display = tab === 'chart' ? 'block' : 'none';
+    if (tab === 'chart') renderMatrix();
   }
 
   // ─── Slider listeners ─────────────────────────────────────────────────────────
@@ -930,7 +881,7 @@
   function syncUIFromState() {
     const sl = document.getElementById('tempSlider'), wsl = document.getElementById('weekTempSlider');
     if (unit==='F') {
-      sl.value=tempF;    document.getElementById('tempDisplay').textContent=tempF;
+      sl.value=tempF;      document.getElementById('tempDisplay').textContent=tempF;
       wsl.value=weekTempF; document.getElementById('weekTempDisplay').textContent=weekTempF;
     } else {
       const c=Math.round((tempF-32)*5/9), wc=Math.round((weekTempF-32)*5/9);
@@ -947,7 +898,7 @@
   async function fetchWeatherForLocation() {
     if (!lat || !lon) return;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,cloud_cover&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,cloud_cover&daily=temperature_2m_max,temperature_2m_min,sunshine_duration&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&past_days=7&forecast_days=3`;
-    const res = await fetch(url);
+    const res  = await fetch(url);
     const data = await res.json();
     hourlyForecast = data.hourly;
 
@@ -961,7 +912,7 @@
       sun  = cc < 25 ? 'full' : cc < 65 ? 'partial' : 'overcast';
     }
 
-    const daily = data.daily;
+    const daily    = data.daily;
     const pastAvgs = daily.temperature_2m_max.slice(0,7).map((mx,i) => (mx + daily.temperature_2m_min[i]) / 2);
     weekTempF = Math.round(pastAvgs.reduce((a,b) => a+b, 0) / pastAvgs.length);
     const avgSun = daily.sunshine_duration.slice(0,7).reduce((a,b) => a+b, 0) / 7;
