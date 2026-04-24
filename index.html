@@ -800,8 +800,19 @@ function setUnit(u) {
     const daily    = data.daily;
     const pastAvgs = daily.temperature_2m_max.slice(0,7).map((mx,i) => (mx + daily.temperature_2m_min[i]) / 2);
     weekTempF = Math.round(pastAvgs.reduce((a,b) => a+b, 0) / pastAvgs.length);
-    const avgSun = daily.sunshine_duration.slice(0,7).reduce((a,b) => a+b, 0) / 7;
-    weekSun = avgSun > 21600 ? 'sunny' : avgSun > 10800 ? 'mixed' : 'cloudy';
+    // Average cloud cover 10am–4pm over the past 7 days — peak solar heating hours
+    const hourly = data.hourly;
+    const peakCloudSamples = hourly.time.reduce((acc, t, i) => {
+      const date = new Date(t);
+      const daysAgo = (Date.now() - date.getTime()) / 86400000;
+      const h = date.getHours();
+      if (daysAgo >= 0 && daysAgo < 7 && h >= 10 && h <= 16) acc.push(hourly.cloud_cover[i]);
+      return acc;
+    }, []);
+    const avgPeakCloud = peakCloudSamples.length
+      ? peakCloudSamples.reduce((a, b) => a + b, 0) / peakCloudSamples.length
+      : 50;
+    weekSun = avgPeakCloud < 30 ? 'sunny' : avgPeakCloud < 65 ? 'mixed' : 'cloudy';
 
     syncUIFromState();
     render();
