@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f6fd4"/>
+      <stop offset="0.55" stop-color="#479ddf"/>
+      <stop offset="1" stop-color="#8ecdf0"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff7d6"/>
+      <stop offset="0.6" stop-color="#ffd95e"/>
+      <stop offset="1" stop-color="#ffc330"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#sky)"/>
+  <circle cx="350" cy="168" r="92" fill="#ffe27a" opacity="0.45" filter="url(#soft)"/>
+  <circle cx="350" cy="168" r="66" fill="url(#sun)"/>
+  <g fill="#ffffff">
+    <path d="M150 360
+             a64 64 0 0 1 8 -127
+             a86 86 0 0 1 165 18
+             a58 58 0 0 1 -6 109
+             z" opacity="0.97"/>
+  </g>
+  <g stroke="#ffffff" stroke-width="20" stroke-linecap="round" opacity="0.92">
+    <line x1="208" y1="406" x2="190" y2="446"/>
+    <line x1="268" y1="406" x2="250" y2="446"/>
+    <line x1="328" y1="406" x2="310" y2="446"/>
+  </g>
+</svg>
