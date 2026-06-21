@@ -35,8 +35,13 @@
        viewport on iOS, leaving the bottom screen inset showing the dark page color. Don't clip
        here — the no-scroll lock lives on #app (content fits, so nothing scrolls anyway). */
     html{height:100%;overscroll-behavior:none}
+    /* min-height:100vh (NOT 100% / 100dvh) is the fix for the iOS standalone bottom band: on the
+       home screen the layout viewport is 62px (=safe-top) shorter than the screen, so 100%/100dvh
+       resolve to 812 on an 874 screen and the body's cover-image stops short of the home-indicator
+       inset. 100vh resolves to the FULL screen (874), so the image fills edge to edge. (Verified on
+       device: 100vh/100lvh = 874; 100dvh/100svh/innerHeight = 812.) */
     body{
-      height:100%; overscroll-behavior:none;
+      min-height:100vh; overscroll-behavior:none;
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       color:var(--text); -webkit-font-smoothing:antialiased; background:#0b1026;
     }
@@ -537,10 +542,10 @@
     const grad=`linear-gradient(180deg,${sc.g[0]},${sc.g[1]} 52%,${sc.g[2]})`;
     document.getElementById('precip').className=sc.p||'';
     document.getElementById('themeColor').setAttribute('content',sc.g[0]);
-    // Paint the scene onto the <body> background → propagates to the canvas. The IMAGE fills the
-    // body box (the screen), but iOS only paints the thin safe-area insets with the canvas's solid
-    // COLOR — so also set background-color to the sky's bottom tone (g[2]) so that inset strip reads
-    // as the sky continuing rather than a white/dark bar. Gradient is the fallback while loading.
+    // Paint the scene onto the <body> background. With body min-height:100vh the box spans the FULL
+    // screen (incl. the iOS home-indicator inset), so the cover-image fills edge to edge. The gradient
+    // is the fallback while the image loads; background-color (sky's bottom tone g[2]) is a final
+    // safety net so the inset never flashes white/dark during that load.
     const url='assets/scene-'+sc.img+'.jpg';
     const paint=img=>{
       document.body.style.background=(img?`url("${url}") center/cover no-repeat, `:'')+grad;
@@ -745,79 +750,6 @@
   if(saved.lat!=null){setCity(locationName);setLoc('loading','Updating…');fetchWeather().then(()=>setLoc('live',locationName+' · updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))).catch(()=>setLoc('error','Could not refresh.'));}
   else{setCity('Set location');fetchLiveWeather();}
   if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-
-  // ── viewport / safe-area diagnostics + bottom-band fill experiments (URL-hash gated; never ships) ──
-  //   #debug     → measure only; production rendering untouched (color-band fix stays active)
-  //   #fulltest  → enlarge the BODY box to full screen height (screen.height px). If the image
-  //                follows the box, the bottom band shows sky; if it's still clipped, it shows MAGENTA.
-  //   #fixedtest → same probe via a position:fixed full-screen image layer (tests fixed-clipping).
-  //   In both experiments the body color is forced magenta so any uncovered pixel is unmistakable.
-  (function(){
-    const MODES=['','debug','fulltest','fixedtest'];
-    let mode=(location.hash||'').slice(1);
-    if(!MODES.includes(mode))mode='';
-    if(!mode)mode=sessionStorage.getItem('flDbg')||'';
-
-    // VISIBLE tappable chip (standalone PWAs have no address bar). Always shown; reads "DBG ▸" when
-    // off, expands to the live readout when on. Tap to cycle off→debug→fulltest→fixedtest→off.
-    const box=document.createElement('div');
-    box.style.cssText='position:fixed;left:8px;z-index:99999;cursor:pointer;'
-      +'top:calc(env(safe-area-inset-top) + 6px);'
-      +'font:11px/1.4 ui-monospace,Menlo,monospace;color:#0f0;background:rgba(0,0,0,.85);'
-      +'padding:6px 9px;border-radius:8px;white-space:pre;max-width:92vw;'
-      +'border:1px solid rgba(0,255,0,.55);-webkit-user-select:none;user-select:none';
-    box.textContent='DBG ▸';
-    box.addEventListener('click',()=>{
-      sessionStorage.setItem('flDbg',MODES[(MODES.indexOf(mode)+1)%MODES.length]);
-      location.hash=''; location.reload();
-    });
-    document.body.appendChild(box);
-
-    if(!['debug','fulltest','fixedtest'].includes(mode))return;
-
-    // probe that reports the live safe-area insets
-    const probe=document.createElement('div');
-    probe.style.cssText='position:fixed;inset:0;pointer-events:none;visibility:hidden;'
-      +'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
-    document.body.appendChild(probe);
-    const cs=getComputedStyle(probe);
-    // measure what a given CSS length actually resolves to in px (works even when clipped offscreen)
-    const unit=u=>{const d=document.createElement('div');
-      d.style.cssText='position:fixed;left:0;top:0;width:1px;visibility:hidden;pointer-events:none;height:'+u;
-      document.body.appendChild(d);const h=Math.round(d.getBoundingClientRect().height);d.remove();return h;};
-
-    const read=()=>{
-      const sh=screen.height, tag=v=>v+(v===sh?'  ← full ✓':'');
-      box.textContent=
-        'mode: #'+mode+'\n'+
-        'standalone: '+(navigator.standalone===true)+'   dpr: '+devicePixelRatio+'\n'+
-        'screen.height: '+sh+'\n'+
-        'innerHeight:   '+tag(innerHeight)+'\n'+
-        'doc clientH:   '+tag(document.documentElement.clientHeight)+'\n'+
-        '100vh:  '+tag(unit('100vh'))+'\n'+
-        '100svh: '+tag(unit('100svh'))+'\n'+
-        '100lvh: '+tag(unit('100lvh'))+'\n'+
-        '100dvh: '+tag(unit('100dvh'))+'\n'+
-        'safe T/B/L/R: '+parseInt(cs.paddingTop)+'/'+parseInt(cs.paddingBottom)
-          +'/'+parseInt(cs.paddingLeft)+'/'+parseInt(cs.paddingRight);
-    };
-    read();addEventListener('resize',read);setInterval(read,500);
-
-    if(mode==='fulltest'){
-      document.body.style.minHeight=screen.height+'px';      // grow the painting box to the full screen
-    }
-    if(mode==='fixedtest'){
-      const layer=document.createElement('div');
-      layer.style.cssText='position:fixed;left:0;top:0;width:100%;height:'+screen.height
-        +'px;z-index:-2;pointer-events:none;background-size:cover;background-position:center';
-      document.body.insertBefore(layer,document.body.firstChild);
-      setInterval(()=>{layer.style.backgroundImage=getComputedStyle(document.body).backgroundImage.split(',')[0];},400);
-    }
-    if(mode==='fulltest'||mode==='fixedtest'){
-      // applyScene re-sets body bg-color each render; re-assert magenta so any uncovered band screams
-      setInterval(()=>document.body.style.setProperty('background-color','#f0f','important'),200);
-    }
-  })();
 </script>
 </body>
 </html>
