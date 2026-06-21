@@ -72,10 +72,11 @@
     .city .ico{width:16px;height:16px;flex-shrink:0;color:var(--muted)}
     .city span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .top .spacer{flex:1}
-    .unit{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;backdrop-filter:blur(10px)}
+    /* dark glass pill (matches .iconbtn) so the °F/°C labels stay legible on light skies */
+    .unit{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
     .unit button{padding:5px 10px;font-size:.7rem;font-weight:700;color:var(--muted)}
     .unit button.on{background:var(--inset);color:var(--text)}
-    .iconbtn{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(10px);color:var(--muted)}
+    .iconbtn{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--muted)}
     .iconbtn:active{transform:scale(.94)}
 
     .card{background:var(--glass);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);box-shadow:0 8px 28px rgba(0,0,0,.16)}
