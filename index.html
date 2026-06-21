@@ -742,6 +742,29 @@
   if(saved.lat!=null){setCity(locationName);setLoc('loading','Updating…');fetchWeather().then(()=>setLoc('live',locationName+' · updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))).catch(()=>setLoc('error','Could not refresh.'));}
   else{setCity('Set location');fetchLiveWeather();}
   if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
+  // ── TEMP DIAGNOSTIC (remove after) ──
+  (function(){
+    var probe=document.createElement('div');
+    probe.style.cssText='position:fixed;bottom:0;left:0;height:env(safe-area-inset-bottom);width:1px;pointer-events:none';
+    document.body.appendChild(probe);
+    var topProbe=document.createElement('div');
+    topProbe.style.cssText='position:fixed;top:0;left:0;height:env(safe-area-inset-top);width:1px;pointer-events:none';
+    document.body.appendChild(topProbe);
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;left:10px;right:10px;top:40%;z-index:99999;background:rgba(200,0,0,.92);color:#fff;font:12px/1.45 ui-monospace,monospace;padding:9px 11px;border-radius:10px;pointer-events:none;white-space:pre';
+    document.body.appendChild(d);
+    function u(){
+      var si=document.getElementById('sceneImg').getBoundingClientRect();
+      d.textContent='DIAG build17\n'+
+        'standalone: '+(window.navigator.standalone===true||matchMedia('(display-mode:standalone)').matches)+'\n'+
+        'innerH:'+window.innerHeight+'  clientH:'+document.documentElement.clientHeight+'\n'+
+        'screenH:'+screen.height+'  dpr:'+window.devicePixelRatio+'\n'+
+        'sceneImg top:'+Math.round(si.top)+'  bottom:'+Math.round(si.bottom)+'\n'+
+        'safe-top:'+topProbe.getBoundingClientRect().height+'  safe-bottom:'+probe.getBoundingClientRect().height;
+    }
+    setInterval(u,400);u();
+  })();
 </script>
 </body>
 </html>
