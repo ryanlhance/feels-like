@@ -753,7 +753,19 @@
   //   #fixedtest → same probe via a position:fixed full-screen image layer (tests fixed-clipping).
   //   In both experiments the body color is forced magenta so any uncovered pixel is unmistakable.
   (function(){
-    const mode=(location.hash||'').slice(1);
+    const MODES=['','debug','fulltest','fixedtest'];
+    // standalone PWAs have no address bar, so the hash can't be typed there. Long-press the
+    // top-left corner (~1s) to cycle modes; persisted for the session, cleared when the app quits.
+    let mode=(location.hash||'').slice(1);
+    if(!MODES.includes(mode))mode='';
+    if(!mode)mode=sessionStorage.getItem('flDbg')||'';
+    let pt=null; const clr=()=>{if(pt){clearTimeout(pt);pt=null;}};
+    addEventListener('pointerdown',e=>{ if(e.clientX<=44&&e.clientY<=44){
+      pt=setTimeout(()=>{ sessionStorage.setItem('flDbg',MODES[(MODES.indexOf(mode)+1)%MODES.length]);
+        location.hash=''; location.reload(); },1000); } },true);
+    addEventListener('pointerup',clr,true); addEventListener('pointercancel',clr,true);
+    addEventListener('pointermove',e=>{if(pt&&(e.clientX>60||e.clientY>60))clr();},true);
+
     if(!['debug','fulltest','fixedtest'].includes(mode))return;
 
     // probe that reports the live safe-area insets
