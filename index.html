@@ -2,11 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Feels Like — what to wear, how the pool feels, and how your trip will change, based on live weather and how you're getting around.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Feels Like — a glance tells you what to wear and how it'll change over the next few hours, based on live weather and how you're getting around.">
   <title>Feels Like</title>
 
-  <!-- PWA -->
+  <meta property="og:title" content="Feels Like">
+  <meta property="og:description" content="What to wear — based on live weather and how you're getting around.">
+  <meta property="og:image" content="assets/og-image.jpg">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" id="themeColor" content="#0b1026">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,1163 +19,715 @@
   <meta name="apple-mobile-web-app-title" content="Feels Like">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon.png">
 
   <style>
-    :root {
-      --text: #eef1fa; --muted: #aab2cc; --accent: #6c8ef5;
-      --glass: rgba(17, 21, 33, 0.52);
-      --glass-strong: rgba(12, 15, 26, 0.62);
-      --inset: rgba(255, 255, 255, 0.07);
-      --border: rgba(255, 255, 255, 0.10);
-      --border-strong: rgba(255, 255, 255, 0.16);
+    :root{
+      --text:#f1f4fb; --muted:#b3bcd2; --faint:#8b95b0;
+      --glass:rgba(15,19,30,0.46); --inset:rgba(255,255,255,0.08);
+      --border:rgba(255,255,255,0.12); --line:rgba(255,255,255,0.10);
+      /* cold→comfortable→hot ramp (blue → teal-green → amber → orange, Apple-style) */
+      --cold:#2f6db0; --cool:#69a6d4; --neutral:#7cc486; --warm:#e7ad5f; --hot:#d4622f;
+      --scale:linear-gradient(90deg,#3a6ea8 0%,#5fa0d0 38%,#86bcb6 52%,#7cc486 66%,#e3a052 82%,#d3612e 100%);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { min-height: 100%; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--text); position: relative; min-height: 100vh;
-      max-width: 480px; margin: 0 auto;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(48px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
-      -webkit-font-smoothing: antialiased;
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;overflow:hidden}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      color:var(--text); -webkit-font-smoothing:antialiased; background:#0b1026;
     }
+    button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
+    svg{display:block}
+    .ico{width:22px;height:22px;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;fill:none}
+    .ico.fill{fill:currentColor;stroke:none}
 
-    /* ── Weather-reactive sky ── */
-    #sky {
-      position: fixed; inset: 0; z-index: -3;
-      background: linear-gradient(180deg, #0b1026 0%, #1a2350 55%, #2a3570 100%);
-      transition: background 1.1s ease;
-    }
-    #glow {
-      position: fixed; inset: 0; z-index: -2; opacity: 0;
-      transition: opacity 1.1s ease, background 1.1s ease; pointer-events: none;
-    }
-    #precip { position: fixed; inset: -10% 0 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .9s ease; }
-    #precip.rain {
-      opacity: .5;
-      background-image: repeating-linear-gradient(101deg, rgba(255,255,255,0.16) 0 1px, transparent 1px 11px);
-      background-size: 100% 220px;
-      animation: rainfall .5s linear infinite;
-    }
-    #precip.snow {
-      opacity: .85;
-      background-image:
-        radial-gradient(2.2px 2.2px at 20% 30%, #fff, transparent),
-        radial-gradient(2px 2px at 60% 70%, rgba(255,255,255,.9), transparent),
-        radial-gradient(1.8px 1.8px at 80% 20%, #fff, transparent),
-        radial-gradient(2px 2px at 40% 80%, rgba(255,255,255,.85), transparent),
-        radial-gradient(1.6px 1.6px at 90% 60%, #fff, transparent);
-      background-size: 350px 350px, 420px 420px, 300px 300px, 380px 380px, 460px 460px;
-      animation: snowfall 9s linear infinite;
-    }
-    @keyframes rainfall { to { background-position: 0 220px; } }
-    @keyframes snowfall { to { background-position: 0 350px, -30px 420px, 20px 300px, -10px 380px, 25px 460px; } }
-    @media (prefers-reduced-motion: reduce) {
-      #precip.rain, #precip.snow { animation: none; }
-      #sky, #glow, .comfort-marker, .act-pill, .tgl, * { transition: none !important; }
-    }
+    /* reactive sky (gradient is the placeholder; #sceneImg upgrades it when art lands) */
+    #sky{position:fixed;inset:0;z-index:-4;background:linear-gradient(180deg,#0b1026,#1a2350 55%,#2a3570);transition:background 1.1s ease}
+    #sceneImg{position:fixed;inset:0;z-index:-3;background-size:cover;background-position:center;opacity:0;transition:opacity 1.1s ease}
+    #glow{position:fixed;inset:0;z-index:-2;opacity:0;transition:opacity 1.1s ease,background 1.1s ease;pointer-events:none}
+    #precip{position:fixed;inset:-10% 0 0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .9s ease}
+    #precip.rain{opacity:.45;background-image:repeating-linear-gradient(101deg,rgba(255,255,255,0.15) 0 1px,transparent 1px 12px);background-size:100% 220px;animation:rain .5s linear infinite}
+    #precip.snow{opacity:.8;background-image:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(2px 2px at 60% 70%,rgba(255,255,255,.9),transparent),radial-gradient(1.6px 1.6px at 80% 20%,#fff,transparent),radial-gradient(2px 2px at 40% 80%,rgba(255,255,255,.85),transparent);background-size:340px 340px,420px 420px,300px 300px,380px 380px;animation:snow 9s linear infinite}
+    @keyframes rain{to{background-position:0 220px}}
+    @keyframes snow{to{background-position:0 340px,-30px 420px,20px 300px,-10px 380px}}
 
-    /* ── Header ── */
-    header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0; }
-    .app-name { font-size: 0.78rem; font-weight: 700; color: var(--text); letter-spacing: 0.08em; text-transform: uppercase; opacity: .85; }
-    .unit-toggle { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; backdrop-filter: blur(12px); }
-    .unit-btn { padding: 5px 12px; background: transparent; border: none; color: var(--muted); font-size: 0.72rem; font-weight: 700; cursor: pointer; }
-    .unit-btn.active { background: var(--accent); color: #fff; }
+    #app{height:100dvh;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
+      padding:max(10px,env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));gap:9px}
+    /* location bar pinned at top; the card stack centers in the space below */
+    .stack{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:9px}
 
-    /* ── Tabs ── */
-    .tabs { display: flex; gap: 4px; padding: 14px 16px 0; }
-    .tab { padding: 6px 18px; border-radius: 20px; border: 1px solid transparent; background: transparent; color: var(--muted); font-size: 0.82rem; font-weight: 600; cursor: pointer; }
-    .tab.active { background: var(--glass); color: var(--text); border-color: var(--border); backdrop-filter: blur(12px); }
+    /* top bar */
+    .top{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+    .city{display:flex;align-items:center;gap:6px;font-size:.95rem;font-weight:600;letter-spacing:-.01em;min-width:0;text-shadow:0 1px 4px rgba(0,0,0,0.35)}
+    .city .ico{width:16px;height:16px;flex-shrink:0;color:var(--muted)}
+    .city span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .top .spacer{flex:1}
+    .unit{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;backdrop-filter:blur(10px)}
+    .unit button{padding:5px 10px;font-size:.7rem;font-weight:700;color:var(--muted)}
+    .unit button.on{background:var(--inset);color:var(--text)}
+    .iconbtn{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(10px);color:var(--muted)}
+    .iconbtn:active{transform:scale(.94)}
 
-    /* ── Cards ── */
-    .card {
-      background: var(--glass); border: 1px solid var(--border); border-radius: 20px;
-      padding: 18px 20px; margin: 10px 14px 0;
-      backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
-    }
-    .card-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 14px; }
+    .card{background:var(--glass);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);box-shadow:0 8px 28px rgba(0,0,0,.16)}
 
-    /* ── Location ── */
-    .loc-row { display: flex; gap: 6px; }
-    .loc-input { flex: 1; background: var(--inset); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; color: var(--text); font-size: 0.85rem; outline: none; min-width: 0; }
-    .loc-input:focus { border-color: var(--accent); }
-    .loc-input::placeholder { color: var(--muted); }
-    .loc-btn { background: var(--inset); border: 1px solid var(--border); border-radius: 12px; padding: 9px 11px; cursor: pointer; font-size: 0.9rem; color: var(--muted); flex-shrink: 0; transition: border-color 0.1s; }
-    .loc-btn:hover, .loc-btn:focus-visible { border-color: var(--accent); }
-    .loc-status { font-size: 0.72rem; color: var(--muted); margin-top: 8px; display: flex; align-items: center; gap: 5px; min-height: 16px; }
-    .loc-status.live { color: #6ee79f; }
-    .loc-status.error { color: #ff9a9a; }
-    .loc-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-    .loc-dot.pulse { animation: blink 1.2s ease-in-out infinite; }
-    .loc-retry { margin-left: auto; background: var(--inset); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-size: 0.68rem; font-weight: 600; padding: 3px 9px; cursor: pointer; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+    /* hero */
+    /* weather — demoted to a compact supporting card */
+    .weather{position:relative;padding:13px 16px}
+    .weather .info{color:var(--faint)}
+    .weather .info .ico{width:19px;height:19px}
+    .wx-right{display:flex;align-items:flex-start;gap:8px}
+    /* horizontal inset matches the temp bar (snowflake 15 + gap 8 = 23px) so the
+       feels-like number lines up with the bar's left edge and actual with its right */
+    .wx-main{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0 0 0 23px}
+    .wx-feel{display:flex;align-items:baseline;gap:9px;min-width:0}
+    .feel-big{font-size:2.3rem;font-weight:800;letter-spacing:-.03em;line-height:1}
+    .feel-word{font-size:.95rem;font-weight:800;letter-spacing:.01em;text-transform:uppercase}
+    .wx-actual{text-align:right;line-height:1.05;flex-shrink:0}
+    .wx-a-num{display:block;font-size:1.05rem;font-weight:700;color:var(--text)}
+    .wx-a-lbl{font-size:.52rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+    .scale{margin-top:13px;display:flex;align-items:center;gap:8px}
+    .scale .end{color:var(--faint)}
+    .scale .end .ico{width:15px;height:15px}
+    .bar{position:relative;flex:1;height:5px;border-radius:3px;background:var(--scale)}
+    .bar .mk{position:absolute;top:-5px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.32);transform:translateX(-50%);transition:left .4s ease}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+    .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;background:var(--inset);border:1px solid var(--line);font-size:.72rem;font-weight:600}
+    .chip .ico{width:14px;height:14px}
+    .chip.rain{color:#bcdcff} .chip.uv{color:#f4c98a} .chip.wind{color:#cdd6e6}
 
-    /* ── Hero ── */
-    .hero { text-align: center; padding: 26px 16px 20px; }
-    .hero-emoji { font-size: 2.8rem; line-height: 1; margin-bottom: 8px; display: block; }
-    .hero-word { font-size: 3.2rem; font-weight: 900; letter-spacing: -0.04em; line-height: 1; text-transform: uppercase; text-shadow: 0 2px 18px rgba(0,0,0,0.25); }
-    .hero-sub { font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
-    .hero-sub strong { color: var(--text); font-weight: 600; }
-    .live-extras { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 12px; min-height: 0; }
-    .live-extras:empty { margin-top: 0; }
-    .lx-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: var(--inset); border: 1px solid var(--border); font-size: 0.72rem; font-weight: 600; color: var(--text); }
-    .comfort-bar-wrap { margin-top: 20px; }
-    .comfort-bar { height: 4px; border-radius: 2px; background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); position: relative; }
-    .comfort-marker { position: absolute; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.35); transform: translateX(-50%); transition: left 0.4s ease; }
-    .comfort-bar-labels { display: flex; justify-content: space-between; margin-top: 5px; }
-    .comfort-bar-labels span { font-size: 0.58rem; color: var(--muted); }
-    .hero-tip { font-size: 0.78rem; color: var(--muted); line-height: 1.55; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: left; }
-    .hero-tip strong { color: var(--text); }
-    .breakdown-toggle { display: block; width: 100%; background: none; border: none; color: var(--muted); font-size: 0.7rem; cursor: pointer; padding: 10px 0 0; text-align: center; letter-spacing: 0.03em; }
-    .breakdown { padding-top: 10px; display: flex; flex-direction: column; gap: 5px; }
-    .breakdown.hidden { display: none; }
-    .brow { display: flex; justify-content: space-between; font-size: 0.78rem; }
-    .brow span:first-child { color: var(--muted); }
-    .brow .bval { font-weight: 600; }
-    .hot-val { color: #fda4a4; } .cold-val { color: #8ec0ff; } .sun-val { color: #fbd24e; }
+    /* scrubber */
+    .scrub{flex:0 0 auto;padding:11px 16px}
+    .scrub .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+    .scrub .when{font-size:.82rem;font-weight:600}
+    .scrub .when .t{color:var(--muted);font-weight:500}
+    .delta{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--inset)}
+    .delta .ico{width:13px;height:13px}
+    .delta.warm{color:var(--warm)} .delta.cool{color:var(--cool)} .delta.same{color:var(--faint)}
+    input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.18);outline:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.5)}
+    .ticks{display:flex;justify-content:space-between;margin-top:6px;padding:0 2px}
+    .ticks span{font-size:.58rem;color:var(--faint)}
 
-    /* ── Activity strip ── */
-    .act-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-    .act-strip::-webkit-scrollbar { display: none; }
-    .act-pill { display: flex; align-items: center; gap: 5px; padding: 7px 14px; background: var(--inset); border: 1.5px solid var(--border); border-radius: 20px; color: var(--muted); font-size: 0.8rem; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
-    .act-pill:hover, .act-pill:focus-visible { border-color: var(--accent); }
-    .act-pill.active { border-color: var(--accent); background: rgba(108,142,245,0.18); color: var(--text); }
-    .act-icon { font-size: 1.05rem; }
+    /* activity */
+    .act{flex:0 0 auto;padding:10px 12px;display:flex;gap:6px}
+    .act button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;border-radius:13px;border:1.5px solid transparent;color:var(--muted);font-size:.6rem;font-weight:600}
+    .act button .ico{width:22px;height:22px}
+    .act button.on{border-color:var(--border);background:var(--inset);color:var(--text)}
 
-    /* ── Outfit list ── */
-    .outfit-list { display: flex; flex-direction: column; gap: 11px; }
-    .outfit-item { display: flex; align-items: center; gap: 12px; }
-    .outfit-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .outfit-dot.essential { background: #4ade80; }
-    .outfit-dot.optional  { background: #fb923c; }
-    .outfit-icon { font-size: 1.4rem; width: 28px; text-align: center; flex-shrink: 0; }
-    .outfit-name { font-size: 0.88rem; font-weight: 600; }
-    .outfit-detail { font-size: 0.7rem; color: var(--muted); }
-    .fabric-note { margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--border); font-size: 0.76rem; color: var(--muted); display: flex; align-items: center; gap: 7px; }
-    .fabric-note strong { color: var(--text); }
+    /* wear — the prominent answer card */
+    .wear{padding:16px 17px}
+    .fitgrid{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:14px 11px}
+    .item{display:flex;flex-direction:column;align-items:center;gap:5px;width:62px;cursor:pointer}
+    .item .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--inset);border:1px solid var(--line);color:var(--text);transition:border-color .12s,background .12s}
+    .item:active .ic{transform:scale(.95)}
+    .item.sel .ic{border-color:#6c8ef5;background:rgba(108,142,245,.22);color:#fff}
+    .item .ic .ico{width:28px;height:28px}
+    .item .nm{font-size:.62rem;text-align:center;line-height:1.15;color:var(--text)}
+    .item .tag{font-size:.5rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-top:-2px}
+    .fab{margin-top:14px;font-size:.7rem;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
+    .fab .ico{width:15px;height:15px}
+    .fab b{color:var(--text);font-weight:600}
+    .layhint{font-size:.7rem;color:var(--faint);margin-top:9px;display:flex;align-items:center;gap:6px}
+    .layhint .ico{width:14px;height:14px}
 
-    /* ── Collapsible sections ── */
-    .collapsible-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
-    .collapsible-header .card-label { margin-bottom: 0; }
-    .coll-arrow { font-size: 0.62rem; color: var(--muted); transition: transform 0.2s; display: inline-block; }
-    .coll-arrow.open { transform: rotate(180deg); }
-    .coll-body { display: none; padding-top: 16px; }
-    .coll-body.open { display: block; }
+    /* pool glance */
+    .pool{flex:0 0 auto;position:relative;padding:12px 16px;display:flex;align-items:flex-start;gap:13px}
+    .pool .pic{margin-top:1px}
+    .pool .info{margin-top:1px}
+    .pool .pic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--inset);border:1px solid var(--line);flex-shrink:0;color:#bcdcff}
+    .pool .pic .ico{width:20px;height:20px}
+    .pool .mid{flex:1;min-width:0}
+    .pool .vd{font-size:.88rem;font-weight:700}
+    .pool .vd .vd-sub{color:var(--muted);font-weight:600}
+    .cbar-row{display:flex;align-items:center;gap:7px;margin-top:8px}
+    .cend{font-size:.5rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);flex-shrink:0}
+    .cbar{position:relative;flex:1;height:5px;border-radius:3px;background:linear-gradient(90deg,#2f6db0,#69a6d4,#9fbfd0,#cdbfae)}
+    .cbar .mk{position:absolute;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.3);transform:translateX(-50%)}
+    .pool .info{color:var(--faint);flex-shrink:0}
+    .pool .info .ico{width:19px;height:19px}
 
-    /* ── Sliders & toggles ── */
-    .slider-row { margin-bottom: 16px; }
-    .slider-row:last-of-type { margin-bottom: 0; }
-    .slider-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-    .slider-lbl { font-size: 0.8rem; color: var(--muted); }
-    .slider-num { font-size: 1.05rem; font-weight: 700; }
-    .slider-unit-lbl { font-size: 0.7rem; color: var(--muted); }
-    input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; outline: none; cursor: pointer; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5); cursor: pointer; }
-    #tempSlider     { background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); }
-    #humidSlider    { background: linear-gradient(to right, #94a3b8, #60a5fa); }
-    #weekTempSlider { background: linear-gradient(to right, #3b82f6 0%, #22c55e 35%, #f97316 65%, #ef4444 100%); }
-    .tgl-lbl { font-size: 0.76rem; color: var(--muted); margin-bottom: 7px; margin-top: 14px; }
-    .tgl-group { display: flex; gap: 5px; }
-    .tgl { flex: 1; padding: 6px 4px; background: var(--inset); border: 1.5px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 0.72rem; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.12s; white-space: nowrap; }
-    .tgl:hover, .tgl:focus-visible { border-color: var(--accent); }
-    .tgl.active { border-color: var(--accent); background: rgba(108,142,245,0.18); color: var(--text); }
-    .tgl-icon { display: block; font-size: 0.9rem; margin-bottom: 2px; }
-    .shade-btn { width: 100%; margin-top: 10px; padding: 8px 12px; font-size: 0.78rem; font-weight: 600; background: var(--inset); border: 1.5px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; text-align: left; transition: all 0.12s; }
-    .shade-btn.active { border-color: rgba(74,222,128,0.5); background: rgba(74,222,128,0.12); color: #6ee79f; }
+    .loc-line{font-size:.62rem;margin-top:-2px}
+    .loc-line.err{color:#ff9a9a} .loc-line.live{color:#79e3a3}
 
-    /* ── Pool ── */
-    .pool-status { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 12px; }
-    .pool-status.great    { border-color: rgba(74,222,128,0.4);  background: rgba(74,222,128,0.10); }
-    .pool-status.good     { border-color: rgba(163,230,53,0.4);  background: rgba(163,230,53,0.09); }
-    .pool-status.marginal { border-color: rgba(251,146,60,0.4);  background: rgba(251,146,60,0.09); }
-    .pool-status.cold     { border-color: rgba(96,165,250,0.4);  background: rgba(96,165,250,0.09); }
-    .pool-status.no-go    { border-color: var(--border); }
-    .pool-emoji { font-size: 2rem; flex-shrink: 0; line-height: 1; }
-    .pool-main { flex: 1; }
-    .pool-verdict { font-size: 0.9rem; font-weight: 700; }
-    .pool-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
-    .pool-temp-badge { font-size: 1.05rem; font-weight: 800; text-align: right; flex-shrink: 0; }
-    .pool-temp-label { font-size: 0.6rem; color: var(--muted); text-align: right; }
-    .cold-therapy-note { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 10px; font-size: 0.75rem; line-height: 1.5; margin-bottom: 14px; border: 1px solid; }
-    .ct-safe { border-color: rgba(96,165,250,0.35); background: rgba(96,165,250,0.09); }
-    .ct-warn { border-color: rgba(251,146,60,0.4);  background: rgba(251,146,60,0.09); }
-    .ct-icon { font-size: 1rem; flex-shrink: 0; }
-    .ct-label { font-weight: 700; color: var(--text); }
-    .ct-note  { color: var(--muted); }
-
-    /* ── Trip tab ── */
-    .trip-section-label { font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 6px; }
-    .trip-row { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; }
-    .trip-row:last-of-type { margin-bottom: 0; }
-    input[type="datetime-local"] { flex: 1; background: var(--inset); border: 1px solid var(--border); border-radius: 12px; padding: 10px; color: var(--text); font-size: 0.78rem; outline: none; min-width: 0; color-scheme: dark; }
-    input[type="datetime-local"]:focus { border-color: var(--accent); }
-    .trip-mini-btn { background: var(--inset); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; font-size: 0.72rem; color: var(--muted); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
-    .trip-mini-btn:hover, .trip-mini-btn:focus-visible { border-color: var(--accent); color: var(--text); }
-    .add-return-btn { width: 100%; background: transparent; border: 1.5px dashed var(--border-strong); border-radius: 12px; padding: 10px 12px; color: var(--muted); font-size: 0.78rem; cursor: pointer; text-align: left; }
-    .add-return-btn:hover, .add-return-btn:focus-visible { border-color: var(--accent); color: var(--text); }
-    #tripForecastGrid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; margin-bottom: 12px; align-items: start; }
-    .trip-fcol { background: var(--inset); border-radius: 14px; padding: 14px; }
-    .trip-fcol-label { font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
-    .trip-fcol-conditions { font-size: 0.7rem; color: var(--muted); margin-bottom: 10px; }
-    .trip-outfit-chips { display: flex; flex-direction: column; gap: 5px; }
-    .trip-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; border: 1px solid; width: fit-content; }
-    .trip-chip.essential { border-color: rgba(74,222,128,0.35); background: rgba(74,222,128,0.10); color: #6ee79f; }
-    .trip-chip.optional  { border-color: rgba(251,146,60,0.35);  background: rgba(251,146,60,0.10);  color: #fdb574; }
-    .trip-chip-icon { font-size: 0.95rem; }
-    .trip-big-arrow { color: var(--muted); font-size: 1rem; display: flex; align-items: center; padding-top: 38px; }
-    .layering-note { padding: 12px 14px; background: var(--inset); border-radius: 12px; border-left: 3px solid var(--accent); font-size: 0.79rem; color: var(--muted); line-height: 1.55; }
-    .layering-note strong { color: var(--text); }
-    .no-forecast-note { font-size: 0.76rem; color: var(--muted); text-align: center; padding: 14px; font-style: italic; }
-
-    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    /* sheets */
+    .scrim{position:fixed;inset:0;background:rgba(4,6,12,.55);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}
+    .scrim.open{opacity:1;pointer-events:auto}
+    .sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;z-index:50;
+      background:rgba(18,22,34,.96);backdrop-filter:blur(24px);border-radius:22px 22px 0 0;border-top:1px solid var(--border);
+      padding:16px 18px calc(20px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .3s cubic-bezier(.3,.8,.3,1);max-height:82vh;overflow-y:auto}
+    .sheet.open{transform:translateY(0)}
+    .sheet h2{font-size:.92rem;font-weight:700;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .sheet h2 .x{color:var(--muted)}
+    .sub{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:14px 0 8px}
+    .srow{margin-bottom:14px}
+    .srow .sh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;font-size:.8rem;color:var(--muted)}
+    .srow .sh b{color:var(--text);font-size:1rem}
+    .srow input[type=range]{background:var(--scale)}
+    .srow input#humidSlider{background:linear-gradient(90deg,#7f93a8,#69a6d4)}
+    .seg{display:flex;gap:5px}
+    .seg button{flex:1;padding:7px 4px;border-radius:9px;border:1.5px solid var(--border);background:var(--inset);color:var(--muted);font-size:.7rem;font-weight:600}
+    .seg button.on{border-color:#6c8ef5;background:rgba(108,142,245,.18);color:var(--text)}
+    .togbtn{width:100%;margin-top:8px;padding:9px;border-radius:10px;border:1.5px solid var(--border);background:var(--inset);color:var(--muted);font-size:.78rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px}
+    .togbtn.on{border-color:#79e3a3;background:rgba(121,227,163,.12);color:#79e3a3}
+    .det{font-size:.82rem;line-height:1.6;color:var(--muted)}
+    .det b{color:var(--text)}
+    .det .brow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)}
+    .det .brow:last-child{border:none}
+    .citysearch{display:flex;gap:6px;margin-bottom:6px}
+    .citysearch input{flex:1;background:var(--inset);border:1px solid var(--border);border-radius:12px;padding:11px 13px;color:var(--text);font-size:.9rem;outline:none}
+    .citysearch input:focus{border-color:#6c8ef5}
+    .note{display:flex;gap:9px;padding:11px 13px;border-radius:12px;font-size:.76rem;line-height:1.5;border:1px solid;margin-top:10px}
+    .note .ico{width:18px;height:18px;flex-shrink:0}
+    .note.warn{border-color:rgba(228,138,63,.4);background:rgba(228,138,63,.1);color:#f0bd86}
+    .note.cool{border-color:rgba(105,166,212,.4);background:rgba(105,166,212,.1);color:#bcdcff}
   </style>
 </head>
 <body>
 
-<div id="sky"></div>
-<div id="glow"></div>
-<div id="precip"></div>
+<div id="sky"></div><div id="sceneImg"></div><div id="glow"></div><div id="precip"></div>
 
-<header>
-  <span class="app-name">Feels Like</span>
-  <div class="unit-toggle" role="group" aria-label="Temperature unit">
-    <button class="unit-btn active" id="btnF" onclick="setUnit('F')" aria-pressed="true">°F</button>
-    <button class="unit-btn" id="btnC" onclick="setUnit('C')" aria-pressed="false">°C</button>
-  </div>
-</header>
+<div id="app">
 
-<div class="tabs" role="tablist">
-  <button class="tab active" onclick="showTab('today')" role="tab" aria-selected="true">Today</button>
-  <button class="tab" onclick="showTab('trip')" role="tab" aria-selected="false">Trip</button>
-</div>
-
-<!-- ═══ TODAY TAB ═══ -->
-<div id="tab-today">
-
-  <!-- Location -->
-  <div class="card">
-    <div class="loc-row">
-      <input type="text" id="locInput" class="loc-input" placeholder="Search city…" aria-label="Search for a city">
-      <button class="loc-btn" onclick="searchLocation()" title="Search" aria-label="Search for entered city">🔍</button>
-      <button class="loc-btn" onclick="fetchLiveWeather()" title="Use current location" aria-label="Use my current location">📍</button>
+  <div class="top">
+    <button class="city" onclick="openSheet('city')" aria-label="Change location">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <span id="cityName">Locating…</span>
+    </button>
+    <div class="spacer"></div>
+    <div class="unit" role="group" aria-label="Units">
+      <button id="btnF" class="on" onclick="setUnit('F')">°F</button>
+      <button id="btnC" onclick="setUnit('C')">°C</button>
     </div>
-    <div class="loc-status" id="locStatus">
-      <div class="loc-dot" id="locDot"></div>
-      <span id="locText">Use 📍 for live weather or search a city</span>
-    </div>
+    <button class="iconbtn" onclick="openSheet('cog')" aria-label="Adjust conditions">
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.2M12 18.8V21M21 12h-2.2M5.2 12H3M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6M18.4 18.4l-1.6-1.6M7.2 7.2 5.6 5.6"/></svg>
+    </button>
   </div>
 
-  <!-- Hero -->
-  <div class="card">
-    <div class="hero">
-      <span class="hero-emoji" id="comfortEmoji">🙂</span>
-      <div class="hero-word" id="comfortWord" aria-live="polite" style="color:#4ade80;">MILD</div>
-      <div class="hero-sub" id="comfortTemps">feels like <strong>65°F</strong> · actual 65°F</div>
-      <div class="live-extras" id="liveExtras"></div>
-      <div class="comfort-bar-wrap">
-        <div class="comfort-bar"><div class="comfort-marker" id="comfortMarker"></div></div>
-        <div class="comfort-bar-labels"><span>Freezing</span><span>Cold</span><span>Mild</span><span>Warm</span><span>Hot</span></div>
-      </div>
-    </div>
-    <div class="hero-tip" id="adviceEl"></div>
-    <button class="breakdown-toggle" id="breakdownToggle" onclick="toggleBreakdown()">see why ▾</button>
-    <div class="breakdown hidden" id="breakdownEl"></div>
+  <div class="stack">
+
+  <!-- ACTIVITY (primary input — pick first) -->
+  <div class="card act" id="actRow"></div>
+
+  <!-- WEAR (the answer — prominent) -->
+  <div class="card wear">
+    <div class="fitgrid" id="fitGrid"></div>
+    <div class="fab" id="fabricNote"></div>
   </div>
 
-  <!-- Activity -->
-  <div class="card">
-    <div class="card-label">Activity</div>
-    <div class="act-strip">
-      <button class="act-pill active" onclick="setActivity('short-walk')" id="act-short-walk"><span class="act-icon">🚶</span>Short Walk</button>
-      <button class="act-pill"        onclick="setActivity('long-walk')"  id="act-long-walk"><span class="act-icon">🗺️</span>Long Walk</button>
-      <button class="act-pill"        onclick="setActivity('run')"        id="act-run"><span class="act-icon">🏃</span>Run</button>
-      <button class="act-pill"        onclick="setActivity('bike')"       id="act-bike"><span class="act-icon">🚲</span>Bike</button>
-      <button class="act-pill"        onclick="setActivity('scooter')"    id="act-scooter"><span class="act-icon">🛴</span>Scooter</button>
-      <button class="act-pill"        onclick="setActivity('moped')"      id="act-moped"><span class="act-icon">🛵</span>Moped</button>
+  <!-- SCRUBBER (shift the moment — there & back) -->
+  <div class="card scrub" id="scrubCard">
+    <div class="row">
+      <div class="when"><span id="whenLbl">Now</span> <span class="t" id="whenTime"></span></div>
+      <div class="delta same" id="delta" style="display:none"></div>
     </div>
+    <input type="range" id="timeRange" min="0" max="6" step="1" value="0" aria-label="Hours from now">
+    <div class="ticks"><span>Now</span><span>1h</span><span>2h</span><span>3h</span><span>4h</span><span>5h</span><span>6h</span></div>
+    <div class="layhint" id="layHint" style="display:none"></div>
   </div>
 
-  <!-- Outfit -->
-  <div class="card">
-    <div class="card-label">Outfit</div>
-    <div class="outfit-list" id="outfitGrid"></div>
-    <div class="fabric-note" id="fabricBanner"></div>
+  <!-- WEATHER (the why — demoted, compact) -->
+  <div class="card weather">
+    <div class="wx-main">
+      <div class="wx-feel"><span class="feel-big" id="feelBig" aria-live="polite">—</span><span class="feel-word" id="feelWord">—</span></div>
+      <div class="wx-right">
+        <div class="wx-actual"><span class="wx-a-num" id="feelTemp">—</span><span class="wx-a-lbl">actual</span></div>
+        <button class="info" onclick="openSheet('feel')" aria-label="Why it feels like this">
+          <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".3" class="fill" style="stroke:currentColor;stroke-width:1.6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="scale">
+      <span class="end"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v18M3.8 7.5l16.4 9M20.2 7.5 3.8 16.5"/></svg></span>
+      <div class="bar"><div class="mk" id="feelMk"></div></div>
+      <span class="end"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19"/></svg></span>
+    </div>
+    <div class="chips" id="chips"></div>
   </div>
 
-  <!-- Conditions (collapsible) -->
-  <div class="card">
-    <div class="collapsible-header" onclick="toggleSection('cond')">
-      <div class="card-label">Conditions <span id="weatherLabel" style="font-style:italic;text-transform:none;letter-spacing:0;font-weight:400;margin-left:4px;"></span></div>
-      <span class="coll-arrow" id="condArrow">▾</span>
+  <!-- POOL -->
+  <div class="card pool">
+    <div class="pic"><svg class="ico" viewBox="0 0 24 24"><path d="M15 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 11l4 -2l3.5 3l-1.5 2"/><path d="M3 16.75a2.4 2.4 0 0 0 1 .25a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 1 -.25"/></svg></div>
+    <div class="mid">
+      <div class="vd" id="poolVerdict">—</div>
+      <div class="cbar-row">
+        <span class="cend">cold</span>
+        <div class="cbar"><div class="mk" id="poolMk"></div></div>
+        <span class="cend">warm</span>
+      </div>
     </div>
-    <div class="coll-body" id="condBody">
-      <div class="slider-row">
-        <div class="slider-header">
-          <span class="slider-lbl">Temperature</span>
-          <div><span class="slider-num" id="tempDisplay">65</span><span class="slider-unit-lbl" id="tempUnitLbl">°F</span></div>
-        </div>
-        <input type="range" id="tempSlider" min="-10" max="105" value="65" aria-label="Temperature">
-      </div>
-      <div class="slider-row">
-        <div class="slider-header">
-          <span class="slider-lbl">Humidity</span>
-          <div><span class="slider-num" id="humidDisplay">45</span><span class="slider-unit-lbl">%</span></div>
-        </div>
-        <input type="range" id="humidSlider" min="0" max="100" value="45" aria-label="Humidity">
-      </div>
-      <div class="tgl-lbl">Wind</div>
-      <div class="tgl-group">
-        <button class="tgl active" id="wind-calm"     onclick="setWind('calm')">Calm</button>
-        <button class="tgl"        id="wind-light"    onclick="setWind('light')">Light</button>
-        <button class="tgl"        id="wind-moderate" onclick="setWind('moderate')">Mod</button>
-        <button class="tgl"        id="wind-strong"   onclick="setWind('strong')">Strong</button>
-      </div>
-      <div class="tgl-lbl">Sky</div>
-      <div class="tgl-group">
-        <button class="tgl"        id="sun-full"     onclick="setSun('full')"><span class="tgl-icon">☀️</span>Full Sun</button>
-        <button class="tgl active" id="sun-partial"  onclick="setSun('partial')"><span class="tgl-icon">🌤️</span>Partly</button>
-        <button class="tgl"        id="sun-overcast" onclick="setSun('overcast')"><span class="tgl-icon">☁️</span>Overcast</button>
-      </div>
-      <button class="shade-btn" id="shadedBtn" onclick="setShaded()">🌳 Mostly shaded route</button>
-    </div>
+    <button class="info" onclick="openSheet('pool')" aria-label="Pool details">
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".3" class="fill" style="stroke:currentColor;stroke-width:1.6"/></svg>
+    </button>
   </div>
 
-  <!-- Pool (collapsible) -->
-  <div class="card">
-    <div class="collapsible-header" onclick="toggleSection('pool')">
-      <div class="card-label">Pool</div>
-      <span class="coll-arrow" id="poolArrow">▾</span>
-    </div>
-    <div class="coll-body" id="poolBody">
-      <div id="poolStatus" style="margin-top:2px;"></div>
-      <div id="coldTherapyNote"></div>
-      <div class="slider-row">
-        <div class="slider-header">
-          <span class="slider-lbl">Past 7-day avg temp</span>
-          <div><span class="slider-num" id="weekTempDisplay">72</span><span class="slider-unit-lbl" id="weekTempUnitLbl">°F</span></div>
-        </div>
-        <input type="range" id="weekTempSlider" min="-10" max="105" value="72" aria-label="Past 7-day average temperature">
-      </div>
-      <div class="tgl-lbl">Recent sun (past week)</div>
-      <div class="tgl-group">
-        <button class="tgl"        id="wsun-sunny"  onclick="setWeekSun('sunny')"><span class="tgl-icon">☀️</span>Sunny</button>
-        <button class="tgl active" id="wsun-mixed"  onclick="setWeekSun('mixed')"><span class="tgl-icon">🌤️</span>Mixed</button>
-        <button class="tgl"        id="wsun-cloudy" onclick="setWeekSun('cloudy')"><span class="tgl-icon">☁️</span>Cloudy</button>
-      </div>
-    </div>
-  </div>
+  </div><!-- /.stack -->
 
 </div>
 
-<!-- ═══ TRIP TAB ═══ -->
-<div id="tab-trip" style="display:none;">
+<!-- ═══ SHEETS ═══ -->
+<div class="scrim" id="scrim" onclick="closeSheets()"></div>
 
-  <div class="card">
-    <div class="card-label">Trip Planning</div>
-    <div class="trip-section-label">Leaving</div>
-    <div class="trip-row">
-      <input type="datetime-local" id="departureInput" onchange="onDepartureChange()" aria-label="Departure time">
-      <button class="trip-mini-btn" onclick="setDepartureNow()">Now</button>
-    </div>
-    <div class="trip-section-label">Returning</div>
-    <div class="trip-row">
-      <button class="add-return-btn" id="addRetBtn" onclick="showReturnInput()">+ Set return time</button>
-      <div id="returnInputWrap" style="display:none; flex:1;">
-        <div style="display:flex; gap:6px;">
-          <input type="datetime-local" id="returnInput" onchange="onReturnChange()" aria-label="Return time">
-          <button class="trip-mini-btn" onclick="clearReturn()" aria-label="Clear return time">✕</button>
-        </div>
-      </div>
-    </div>
+<!-- City -->
+<div class="sheet" id="sheet-city">
+  <h2>Location <button class="x" onclick="closeSheets()"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+  <div class="citysearch">
+    <input type="text" id="locInput" placeholder="Search a city…" aria-label="Search a city">
+    <button class="iconbtn" onclick="searchLocation()" aria-label="Search"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg></button>
   </div>
-
-  <div class="card" id="tripForecastCard" style="display:none;">
-    <div class="card-label">Forecast Comparison</div>
-    <div id="tripForecastGrid"></div>
-    <div class="layering-note" id="layeringNote"></div>
-  </div>
-
+  <button class="togbtn" onclick="fetchLiveWeather()"><svg class="ico" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg> Use my current location</button>
+  <div class="loc-line" id="locLine"></div>
 </div>
 
+<!-- Cog: adjust -->
+<div class="sheet" id="sheet-cog">
+  <h2>Adjust conditions <button class="x" onclick="closeSheets()"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+  <p class="det" style="font-size:.74rem;margin-bottom:6px">Override the live reading to plan for different conditions.</p>
+  <div class="srow">
+    <div class="sh">Temperature <b><span id="tDisp">65</span><span id="tU">°F</span></b></div>
+    <input type="range" id="tempSlider" min="-10" max="105" value="65">
+  </div>
+  <div class="srow">
+    <div class="sh">Humidity <b><span id="hDisp">45</span>%</b></div>
+    <input type="range" id="humidSlider" min="0" max="100" value="45">
+  </div>
+  <div class="sub">Wind</div>
+  <div class="seg" id="windSeg">
+    <button data-w="calm" class="on">Calm</button><button data-w="light">Light</button><button data-w="moderate">Mod</button><button data-w="strong">Strong</button>
+  </div>
+  <div class="sub">Sky</div>
+  <div class="seg" id="skySeg">
+    <button data-s="full">Full sun</button><button data-s="partial" class="on">Partly</button><button data-s="overcast">Overcast</button>
+  </div>
+  <button class="togbtn" id="shadeTog" onclick="toggleShade()"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v3M12 21a6 6 0 0 0 6-6c0-4-6-9-6-9s-6 5-6 9a6 6 0 0 0 6 6Z"/></svg> Mostly shaded route</button>
+  <div class="sub">Pool — past week</div>
+  <div class="srow">
+    <div class="sh">7-day avg temp <b><span id="wtDisp">72</span><span id="wtU">°F</span></b></div>
+    <input type="range" id="weekTempSlider" min="-10" max="105" value="72">
+  </div>
+  <div class="seg" id="wsunSeg">
+    <button data-ws="sunny">Sunny</button><button data-ws="mixed" class="on">Mixed</button><button data-ws="cloudy">Cloudy</button>
+  </div>
+</div>
+
+<!-- Feel: why -->
+<div class="sheet" id="sheet-feel">
+  <h2>Why it feels like this <button class="x" onclick="closeSheets()"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+  <p class="det" id="adviceDet" style="margin-bottom:12px"></p>
+  <div class="det" id="breakdownDet"></div>
+</div>
+
+<!-- Pool: details -->
+<div class="sheet" id="sheet-pool">
+  <h2>Pool <button class="x" onclick="closeSheets()"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+  <div class="det" id="poolDet"></div>
+  <div id="coldDet"></div>
+</div>
 
 <script>
-  // ─── State ───────────────────────────────────────────────────────────────────
-  let unit = 'F', activity = 'short-walk';
-  let tempF = 65, humidity = 45;
-  let wind = 'calm', sun = 'partial';
-  let weekTempF = 72, weekSun = 'mixed';
-  let shaded = false;
-  let lat = null, lon = null, locationName = '';
-  let lastUpdated = null, hourlyForecast = null;
-  let departureIsNow = true;
-
-  // Live-only context (null in manual mode) — drives precip/UV advice + sky scene
-  let live = { code: null, isDay: null, precipProb: null, uv: null, windMph: null, sunriseT: null, sunsetT: null };
-
-  const STORE = 'feelslike.v2';
-
-  // ─── Activity data ────────────────────────────────────────────────────────────
-  const ACTS = {
-    'short-walk': { name: 'Short Walk', icon: '🚶',  speed: 0,   exert: 0,  windMult: 1.0 },
-    'long-walk':  { name: 'Long Walk',  icon: '🗺️',  speed: 0,   exert: 5,  windMult: 1.0 },
-    'run':        { name: 'Run',        icon: '🏃',  speed: 0,   exert: 15, windMult: 0.85 },
-    'bike':       { name: 'Bike',       icon: '🚲',  speed: -12, exert: 5,  windMult: 0.4  },
-    'scooter':    { name: 'Scooter',    icon: '🛴',  speed: -10, exert: 0,  windMult: 0.5  },
-    'moped':      { name: 'Moped',      icon: '🛵',  speed: -18, exert: 0,  windMult: 0.2  },
+  // ── SVG icon library — Tabler + Iconoir (24×24 stroke), normalized to one stroke-width ──
+  const _shirt='<path d="M15 4l6 2v5h-3v8a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1v-8h-3v-5l6 -2a3 3 0 0 0 6 0"/>';
+  // sleeved tops — drawn to match the library stroke (no clean long-sleeve garment exists in the icon sets)
+  const _sleeves='M9.5 5 L7.5 4.5 L3 11 L5.5 13.5 L8 10 L8 20 L16 20 L16 10 L18.5 13.5 L21 11 L16.5 4.5 L14.5 5';
+  const _longsleeve='<path d="'+_sleeves+' Q12 6.8 9.5 5 Z"/>';
+  const _jacket='<path d="'+_sleeves+'"/><path d="M9.5 5 L12 7.5 L14.5 5"/><path d="M12 7.5 V20"/>';
+  const _pants='<path d="M12 19H16.4363C16.7532 19 17.0154 18.7536 17.0352 18.4374L17.9602 3.63743C17.9817 3.29201 17.7074 3 17.3613 3H6.63426C6.28981 3 6.01608 3.28936 6.03518 3.63328L6.96852 20.4333C6.98618 20.7512 7.24915 21 7.56759 21H11.4C11.7314 21 12 20.7314 12 20.4V8"/>';
+  const I = {
+    walk:'<path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/>',
+    longwalk:'<path d="M11 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l2 -4"/><path d="M13 21v-4l-3 -3l1 -6l3 4l3 2"/><path d="M10 14l-1.827 -1.218a2 2 0 0 1 -.831 -2.15l.28 -1.117a2 2 0 0 1 1.939 -1.515h1.439l4 1l3 -2"/><path d="M17 12v9"/><path d="M16 20h2"/>',
+    run:'<path d="M11.007 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 17l5 1l.75 -1.5"/><path d="M15 21v-4l-4 -3l1 -6"/><path d="M7 12v-3l5 -1l3 3l3 1"/>',
+    bike:'<path d="M2 18a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M16 18a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M12 19v-4l-3 -3l5 -4l2 3h3"/><path d="M13.007 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>',
+    scooter:'<path d="M16 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M8 17h5a6 6 0 0 1 5 -5v-5a2 2 0 0 0 -2 -2h-1"/><path d="M10 4l-2 4h3l-2 4"/>',
+    moped:'<path d="M2 16a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M16 16a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M7.5 14h5l4 -4h-10.5m1.5 4l4 -4"/><path d="M13 6h2l1.5 3l2 4"/>',
+    drop:'<path d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546"/>',
+    sun:'<path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>',
+    wind:'<path d="M5 8h8.5a2.5 2.5 0 1 0 -2.34 -3.24"/><path d="M3 12h15.5a2.5 2.5 0 1 1 -2.34 3.24"/><path d="M4 16h5.5a2.5 2.5 0 1 1 -2.34 3.24"/>',
+    snow:'<path d="M10 4l2 1l2 -1"/><path d="M12 2v6.5l3 1.72"/><path d="M17.928 6.268l.134 2.232l1.866 1.232"/><path d="M20.66 7l-5.629 3.25l.01 3.458"/><path d="M19.928 14.268l-1.866 1.232l-.134 2.232"/><path d="M20.66 17l-5.629 -3.25l-2.99 1.738"/><path d="M14 20l-2 -1l-2 1"/><path d="M12 22v-6.5l-3 -1.72"/><path d="M6.072 17.732l-.134 -2.232l-1.866 -1.232"/><path d="M3.34 17l5.629 -3.25l-.01 -3.458"/><path d="M4.072 9.732l1.866 -1.232l.134 -2.232"/><path d="M3.34 7l5.629 3.25l2.99 -1.738"/>',
+    coat:_jacket, jacket:_jacket, lightjacket:_jacket, shell:_jacket,
+    hoodie:'<path d="'+_sleeves+'"/><path d="M9.5 5 Q12 1.8 14.5 5 M9.5 5 Q12 7 14.5 5"/><path d="M9.5 16 H14.5"/>',
+    shortsleeve:_shirt, longsleeve:_longsleeve, linen:_shirt,
+    pants:_pants, warmpants:_pants,
+    shorts:'<path d="M12 16.8H18.9662C19.2706 16.8 19.5267 16.5721 19.5621 16.2698L20.9215 4.66983C20.9633 4.31323 20.6846 4 20.3256 4H3.65888C3.30539 4 3.02851 4.30406 3.0615 4.65601L4.449 19.456C4.47791 19.7643 4.73671 20 5.04638 20H11.4C11.7314 20 12 19.7314 12 19.4V12"/>',
+    gloves:'<path d="M10 21v-9a2.5 2.5 0 0 1 5 0v9z"/><path d="M10 13.6c-1.4 -1 -3 -.1 -2.6 1.4c.3 1 1.5 1.3 2.6 .9"/><path d="M10 18h5"/>',
+    beanie:'<path d="M5 16a7 7 0 0 1 14 0"/><path d="M4 16h16a1.5 1.5 0 0 1 0 3h-16a1.5 1.5 0 0 1 0 -3z"/><path d="M11 5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M12 7v2"/>',
+    scarf:'<path d="M15 11H5C3.89543 11 3 10.1046 3 9V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V21"/><path d="M18 21V19"/><path d="M15 3V7V11V21"/><path d="M15 7H3"/>',
+    umbrella:'<path d="M4 12a8 8 0 0 1 16 0l-16 0"/><path d="M12 12v6a2 2 0 0 0 4 0"/>',
+    sunscreen:'<path d="M9 8h6v11a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M10 8v-2h4v2"/><path d="M12 12v4"/><path d="M10 14h4"/>',
+    sunglasses:'<path d="M8 4h-2l-3 10"/><path d="M16 4h2l3 10"/><path d="M10 16h4"/><path d="M21 16.5a3.5 3.5 0 0 1 -7 0v-2.5h7v2.5"/><path d="M10 16.5a3.5 3.5 0 0 1 -7 0v-2.5h7v2.5"/><path d="M4 14l4.5 4.5"/><path d="M15 14l4.5 4.5"/>',
+    up:'<path d="M12 19V5M6 11l6-6 6 6"/>', down:'<path d="M12 5v14M6 13l6 6 6-6"/>'
   };
+  function svg(n,cls){return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 24 24">'+(I[n]||'')+'</svg>';}
 
-  const WIND_OFFSETS = { calm: 0, light: -4, moderate: -8, strong: -14 };
-  const SUN_OFFSETS  = { full: 8, partial: 3, overcast: 0 };
-  const WEEK_SUN     = { sunny: 5, mixed: 2, cloudy: -1 };
+  // ── State ──
+  let unit='F', activity='short-walk';
+  let tempF=65, humidity=45, wind='calm', sun='partial', shaded=false;
+  let weekTempF=72, weekSun='mixed';
+  let apparentF=null;
+  let lat=null, lon=null, locationName='';
+  let hourlyForecast=null, dataMode='manual';
+  let offset=0;                 // hours from now (0-6)
+  let now0=null;                // snapshot at offset 0 (for delta)
+  let lastFit=[], fabricHTML='', selWear=null;  // wear card: items + tap-to-explain
 
-  // ─── Persistence ──────────────────────────────────────────────────────────────
-  function saveState() {
-    try {
-      localStorage.setItem(STORE, JSON.stringify({ unit, activity, lat, lon, locationName }));
-    } catch (e) {}
-  }
-  function loadState() {
-    try {
-      const s = JSON.parse(localStorage.getItem(STORE) || '{}');
-      if (s.unit === 'C' || s.unit === 'F') unit = s.unit;
-      if (s.activity && ACTS[s.activity]) activity = s.activity;
-      if (typeof s.lat === 'number' && typeof s.lon === 'number') { lat = s.lat; lon = s.lon; }
-      if (s.locationName) locationName = s.locationName;
-      return s;
-    } catch (e) { return {}; }
-  }
-
-  // ─── Core calc ───────────────────────────────────────────────────────────────
-  function humidAdj(tF, hum) {
-    if (tF > 75) return Math.round((hum - 40) * 0.12);
-    if (tF < 45) return Math.round((hum - 40) * -0.04);
-    return 0;
-  }
-  function effTemp(tF, hum, act, w, s, shade) {
-    const a = ACTS[act];
-    const windOff = Math.round(WIND_OFFSETS[w] * a.windMult);
-    const sunOff  = shade ? 0 : SUN_OFFSETS[s];
-    return Math.round(tF + a.speed + a.exert + windOff + sunOff + humidAdj(tF, hum));
-  }
-
-  // ─── Comfort ─────────────────────────────────────────────────────────────────
-  function getComfort(eff) {
-    if (eff < 20) return { word: 'FREEZING',    emoji: '❄️',  color: '#93c5fd', cls: 'ec-arctic'   };
-    if (eff < 30) return { word: 'VERY COLD',   emoji: '🥶',  color: '#60a5fa', cls: 'ec-very-cold' };
-    if (eff < 40) return { word: 'COLD',        emoji: '🧊',  color: '#38bdf8', cls: 'ec-cold'      };
-    if (eff < 50) return { word: 'CHILLY',      emoji: '😬',  color: '#22d3ee', cls: 'ec-chilly'    };
-    if (eff < 58) return { word: 'COOL',        emoji: '😌',  color: '#2dd4bf', cls: 'ec-cool'      };
-    if (eff < 65) return { word: 'MILD',        emoji: '🙂',  color: '#4ade80', cls: 'ec-mild'      };
-    if (eff < 72) return { word: 'COMFORTABLE', emoji: '😊',  color: '#a3e635', cls: 'ec-comfy'     };
-    if (eff < 80) return { word: 'WARM',        emoji: '☀️',  color: '#fb923c', cls: 'ec-warm'      };
-    if (eff < 90) return { word: 'HOT',         emoji: '🥵',  color: '#f87171', cls: 'ec-hot'       };
-    return              { word: 'VERY HOT',     emoji: '🔥',  color: '#ef4444', cls: 'ec-very-hot'  };
-  }
-
-  // ─── Fabric ──────────────────────────────────────────────────────────────────
-  function getFabric(eff, hum) {
-    if (eff >= 80 && hum >= 45) return { choice: 'Linen', icon: '🌿', reason: 'Hot & humid — linen breathes and dries far better than cotton', cls: 'linen-strong' };
-    if (eff >= 72 && hum >= 60) return { choice: 'Linen', icon: '🌿', reason: 'Warm and muggy — linen stays cooler and pulls moisture away', cls: 'linen-strong' };
-    if (eff >= 68 && hum >= 50) return { choice: 'Linen preferred', icon: '🌿', reason: 'Getting warm and humid — linen is noticeably more comfortable', cls: 'linen-prefer' };
-    if (eff >= 72)              return { choice: 'Linen or Cotton', icon: '🌿', reason: 'Warm but dry — either works, linen is slightly cooler', cls: 'either' };
-    if (eff >= 58)              return { choice: 'Cotton', icon: '🧵', reason: 'Mild conditions — cotton is comfortable and won\'t feel stiff', cls: 'cotton' };
-    return { choice: 'Cotton', icon: '🧵', reason: 'Cool temps — cotton holds a bit more warmth than linen', cls: 'cotton' };
-  }
-
-  // ─── Precipitation helpers (WMO weather codes) ─────────────────────────────────
-  function precipKind(code) {
-    if (code == null) return null;
-    if (code >= 95) return 'storm';
-    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow';
-    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'rain';
-    return null;
-  }
-  // Returns a gear item to push into the outfit, or null. ctx = live context for this moment.
-  function precipGear(ctx, hum) {
-    const kind = ctx ? precipKind(ctx.code) : null;
-    const prob = ctx ? ctx.precipProb : null;
-    if (kind === 'snow') {
-      return prob != null && prob >= 40
-        ? { e: '🧥', name: 'Waterproof Shell', d: 'Snow likely', l: 'essential' }
-        : { e: '🧤', name: 'Snow-ready', d: 'Flurries possible', l: 'optional' };
-    }
-    if (kind === 'storm') return { e: '☔', name: 'Umbrella + Shell', d: 'Storms — stay dry', l: 'essential' };
-    if (kind === 'rain') {
-      if (prob == null || prob >= 55) return { e: '☂️', name: 'Umbrella', d: 'Rain likely', l: 'essential' };
-      if (prob >= 30)                 return { e: '☂️', name: 'Umbrella', d: `${prob}% chance — just in case`, l: 'optional' };
-    }
-    // Manual / no live data: fall back to the old humidity heuristic
-    if (!ctx && hum > 85) return { e: '☂️', name: 'Rain Gear', d: 'Very humid!', l: 'optional' };
-    // Live but no precip type yet a meaningful chance later
-    if (ctx && prob != null && prob >= 35 && kind == null) return { e: '☂️', name: 'Umbrella', d: `${prob}% chance later`, l: 'optional' };
-    return null;
-  }
-  function uvGear(ctx) {
-    if (!ctx || ctx.uv == null || !ctx.isDay) return null;
-    if (ctx.uv >= 8) return { e: '🧴', name: 'Sunscreen + Hat', d: `UV ${Math.round(ctx.uv)} — very high`, l: 'essential' };
-    if (ctx.uv >= 6) return { e: '🕶️', name: 'Sunglasses + SPF', d: `UV ${Math.round(ctx.uv)} — high`, l: 'optional' };
-    if (ctx.uv >= 3) return { e: '🕶️', name: 'Sunglasses', d: `UV ${Math.round(ctx.uv)} — moderate`, l: 'optional' };
-    return null;
-  }
-
-  // ─── Outfit ──────────────────────────────────────────────────────────────────
-  function getOutfit(eff, hum, ctx) {
-    const items = [];
-    if      (eff < 28) items.push({ e: '🧥', name: 'Heavy Coat',    d: 'Essential', l: 'essential' });
-    else if (eff < 45) items.push({ e: '🧥', name: 'Jacket',        d: 'Wear it',   l: 'essential' });
-    else if (eff < 58) items.push({ e: '🧥', name: 'Light Jacket',  d: 'Good idea', l: 'optional'  });
-    else               items.push({ e: '🧥', name: 'Jacket',        d: 'Leave it',  l: 'skip'      });
-    if      (eff < 40) items.push({ e: '🧣', name: 'Warm Layers',   d: 'Essential', l: 'essential' });
-    else if (eff < 55) items.push({ e: '🧶', name: 'Hoodie/Fleece', d: 'Wear it',   l: 'essential' });
-    else if (eff < 65) items.push({ e: '🧶', name: 'Hoodie',        d: 'Optional',  l: 'optional'  });
-    else               items.push({ e: '🧶', name: 'Hoodie',        d: 'Too warm',  l: 'skip'      });
-    if      (eff < 60) items.push({ e: '👕', name: 'Long Sleeve',  d: 'Wear it',   l: 'essential' });
-    else if (eff < 82) items.push({ e: '👕', name: 'Short Sleeve', d: 'Wear it',   l: 'essential' });
-    else               items.push({ e: '🌿', name: 'Flowy/Linen',  d: 'Stay cool', l: 'essential' });
-    if      (eff < 48) items.push({ e: '👖', name: 'Warm Pants',   d: 'Essential', l: 'essential' });
-    else if (eff < 65) items.push({ e: '👖', name: 'Pants',        d: 'Wear it',   l: 'essential' });
-    else if (eff < 75) items.push({ e: '🩳', name: 'Shorts/Pants', d: 'Your call', l: 'optional'  });
-    else               items.push({ e: '🩳', name: 'Shorts',       d: 'Go for it', l: 'essential' });
-    if (eff < 25) {
-      items.push({ e: '🧤', name: 'Gloves',   d: 'Essential', l: 'essential' });
-      items.push({ e: '🧢', name: 'Warm Hat', d: 'Essential', l: 'essential' });
-      items.push({ e: '🧣', name: 'Scarf',    d: 'Wear it',   l: 'essential' });
-    } else if (eff < 38) {
-      items.push({ e: '🧤', name: 'Gloves', d: 'Good idea', l: 'optional' });
-      items.push({ e: '🧢', name: 'Hat',    d: 'Optional',  l: 'optional' });
-    } else if (eff < 50) {
-      items.push({ e: '🧤', name: 'Gloves', d: 'Optional', l: 'optional' });
-    }
-    const pg = precipGear(ctx, hum);
-    if (pg) items.push(pg);
-    const ug = uvGear(ctx);
-    if (ug) items.push(ug);
-    return items;
-  }
-
-  // ─── Pool ────────────────────────────────────────────────────────────────────
-  function estimatePoolTemp(wkAvgF, wkSun, todayF, todaySun) {
-    let p = (wkAvgF * 0.65 + todayF * 0.35) - 10;
-    p += WEEK_SUN[wkSun];
-    p += todaySun === 'full' ? 2 : todaySun === 'partial' ? 1 : 0;
-    return Math.max(50, Math.min(95, Math.round(p)));
-  }
-  function getColdTherapy(pt) {
-    if (pt >= 68) return null;
-    if (pt < 45)  return { icon: '⚠️', label: 'Dangerously cold', note: 'Risk of cold shock — not safe for immersion', safe: false };
-    if (pt < 56)  return { icon: '🧊', label: 'Prime cold therapy range', note: `~${pt}°F is ideal for muscle recovery & inflammation — limit to 10–15 min`, safe: true };
-    if (pt < 62)  return { icon: '🧊', label: 'Cold therapy — good range', note: 'Cool enough for meaningful recovery benefit, easier to tolerate than ice baths', safe: true };
-    return               { icon: '🧊', label: 'Mild cold therapy', note: 'On the warmer edge — some benefit for soreness, low intensity', safe: true };
-  }
-  function getPoolInfo(pt, airTemp, w, s) {
-    let wd;
-    if      (pt < 60) wd = 'Way too cold';   else if (pt < 65) wd = 'Very cold water';
-    else if (pt < 70) wd = 'Cold water';     else if (pt < 74) wd = 'Chilly water';
-    else if (pt < 78) wd = 'Cool, refreshing water'; else if (pt < 83) wd = 'Comfortable water';
-    else if (pt < 87) wd = 'Warm water';     else wd = 'Very warm water';
-    const airWarm = airTemp >= 78, airOk = airTemp >= 72;
-    const waterOk = pt >= 74, waterGood = pt >= 78;
-    const windBad = w === 'strong' || w === 'moderate';
-    const sunny   = s === 'full' || s === 'partial';
-    let verdict, sub, cls, emoji;
-    if      (waterGood && airWarm && sunny && !windBad) { verdict = 'Perfect pool day'; emoji = '🏊'; cls = 'great';    sub = `${wd} · warm air · great sun`; }
-    else if (waterOk && airWarm)                        { verdict = 'Good pool day';    emoji = '😊'; cls = 'good';     sub = `${wd} · comfortable air${windBad?' · windy getting out':''}`; }
-    else if (waterOk && airOk && sunny)                 { verdict = 'Decent pool day';  emoji = '🙂'; cls = 'good';     sub = `${wd} · mild air · sun helps`; }
-    else if (pt >= 70 && airTemp >= 82)                 { verdict = 'Refreshing on a hot day'; emoji = '😌'; cls = 'marginal'; sub = `${wd} · hot air makes it worthwhile`; }
-    else if (pt >= 65 && airTemp >= 78)                 { verdict = 'Brave souls only'; emoji = '😬'; cls = 'cold';    sub = `${wd} · air is warm but water is cold`; }
-    else if (pt < 65 || airTemp < 68)                   { verdict = 'Not pool season yet'; emoji = '🚫'; cls = 'no-go';  sub = pt < 65 ? `${wd} · too cold to enjoy` : `${wd} · air too cool`; }
-    else                                                { verdict = 'Marginal';         emoji = '😐'; cls = 'marginal'; sub = `${wd} · conditions are borderline`; }
-    return { verdict, sub, emoji, poolCls: cls, poolTemp: pt, coldTherapy: getColdTherapy(pt) };
-  }
-
-  // ─── Advice ──────────────────────────────────────────────────────────────────
-  function getAdvice(eff, act, w, s, ctx) {
-    const a = ACTS[act];
-    let msg = `For a <strong>${a.name}</strong>: `;
-    if      (eff < 25) msg += 'Real cold — protect your extremities, layer up properly.';
-    else if (eff < 35) msg += 'Bundle up. A proper jacket and warm layers are a must.';
-    else if (eff < 45) msg += 'Cold enough to feel it. Full jacket and long layers.';
-    else if (eff < 55) msg += 'Cool. A light jacket or heavy hoodie will keep you comfortable.';
-    else if (eff < 62) msg += 'Mild — a light layer is a good safety net, especially in the shade.';
-    else if (eff < 70) msg += 'Comfortable. Short sleeves work well here.';
-    else if (eff < 80) msg += 'Warm. Light clothing — shorts are a great choice.';
-    else               msg += 'Hot. Go as light as possible and stay hydrated.';
-    if (act === 'moped')          msg += ' <strong>Moped headwind is significant</strong> — even mild days feel much colder at speed.';
-    else if (act === 'scooter')   msg += ' Scooter speed means real wind chill and no body heat — dress warmer than you\'d expect.';
-    else if (act === 'bike')      msg += ' Biking creates a constant breeze — you\'ll feel cooler than standing still.';
-    else if (act === 'run')       msg += ' <strong>You heat up fast running</strong> — always dress lighter than you think you need to.';
-    else if (act === 'long-walk') msg += ' A long walk warms you up noticeably once you\'re moving.';
-    if (w === 'strong')      msg += ' <strong>Strong wind today</strong> — factor in extra chill when exposed.';
-    else if (w === 'moderate') msg += ' Moderate wind will make shaded or open stretches feel cooler.';
-    if (s === 'overcast') msg += ' No sun means no radiant warmth — dress accordingly.';
-    // Live precip + UV nuance
-    if (ctx) {
-      const kind = precipKind(ctx.code), prob = ctx.precipProb;
-      if (kind === 'storm')      msg += ' ⛈️ <strong>Thunderstorms expected</strong> — consider waiting it out.';
-      else if (kind === 'snow')  msg += ' 🌨️ Snow in the forecast — watch for slick footing.';
-      else if (kind === 'rain')  msg += prob != null ? ` 🌧️ <strong>${prob}% chance of rain</strong> — bring cover.` : ' 🌧️ Rain in the forecast — bring cover.';
-      else if (prob != null && prob >= 35) msg += ` 🌦️ ${prob}% chance of a passing shower.`;
-      if (ctx.isDay && ctx.uv != null && ctx.uv >= 6) msg += ` ☀️ <strong>UV ${Math.round(ctx.uv)}</strong> — sunscreen worth it.`;
-    }
-    return msg;
-  }
-
-  // ─── Weather-reactive sky ──────────────────────────────────────────────────────
-  // Each scene: top/mid/bottom gradient stops, a soft light glow, and optional precip layer.
-  const SCENES = {
-    'clear-day':     { grad: ['#1f6fd4','#479ddf','#8ecdf0'], glow: 'rgba(255,246,200,0.55)', glowPos: '78% 16%', precip: '' },
-    'clear-night':   { grad: ['#070b1f','#121a3e','#202a58'], glow: 'rgba(200,212,255,0.30)', glowPos: '24% 18%', precip: '' },
-    'cloudy-day':    { grad: ['#4a82bf','#79a6cf','#aac6de'], glow: 'rgba(253,243,208,0.35)', glowPos: '80% 14%', precip: '' },
-    'cloudy-night':  { grad: ['#0c1430','#1b264c','#2c3766'], glow: 'rgba(174,185,230,0.22)', glowPos: '26% 16%', precip: '' },
-    'overcast-day':  { grad: ['#5f7184','#8595a6','#aab6c2'], glow: 'rgba(232,237,242,0.20)', glowPos: '50% 8%',  precip: '' },
-    'overcast-night':{ grad: ['#161c28','#262f3f','#363f52'], glow: 'rgba(74,84,104,0.30)',   glowPos: '50% 10%', precip: '' },
-    'rain-day':      { grad: ['#44525f','#5e6f7e','#74858f'], glow: 'rgba(220,230,236,0.12)', glowPos: '50% 8%',  precip: 'rain' },
-    'rain-night':    { grad: ['#10161f','#1d2630','#2a3540'], glow: 'rgba(120,140,160,0.12)', glowPos: '50% 10%', precip: 'rain' },
-    'snow-day':      { grad: ['#6f7f93','#97a7b8','#c6d2dd'], glow: 'rgba(255,255,255,0.22)', glowPos: '50% 12%', precip: 'snow' },
-    'snow-night':    { grad: ['#1a2230','#2b3647','#3c4860'], glow: 'rgba(200,212,228,0.16)', glowPos: '50% 12%', precip: 'snow' },
-    'fog-day':       { grad: ['#8a9399','#aab4bd','#cdd4da'], glow: 'rgba(255,255,255,0.18)', glowPos: '50% 30%', precip: '' },
-    'fog-night':     { grad: ['#20262f','#313945','#454f5d'], glow: 'rgba(120,130,140,0.18)', glowPos: '50% 30%', precip: '' },
-    'storm-day':     { grad: ['#2b3340','#3d4658','#515b6f'], glow: 'rgba(180,190,205,0.10)', glowPos: '50% 8%',  precip: 'rain' },
-    'storm-night':   { grad: ['#0c0f16','#1a1f2b','#272d3b'], glow: 'rgba(120,130,150,0.10)', glowPos: '50% 10%', precip: 'rain' },
-    'sunrise':       { grad: ['#f4a259','#ea7e8a','#5a6bb0'], glow: 'rgba(255,217,160,0.55)', glowPos: '50% 78%', precip: '' },
-    'sunset':        { grad: ['#ff7a5c','#d56a93','#43468f'], glow: 'rgba(255,200,150,0.50)', glowPos: '50% 80%', precip: '' },
+  const ACTS={
+    'short-walk':{name:'Walk',icon:'walk',speed:0,exert:0,windMult:1.0},
+    'long-walk':{name:'Hike',icon:'longwalk',speed:0,exert:5,windMult:1.0},
+    'run':{name:'Run',icon:'run',speed:0,exert:15,windMult:.85},
+    'bike':{name:'Bike',icon:'bike',speed:-12,exert:5,windMult:.4},
+    'scooter':{name:'Scoot',icon:'scooter',speed:-10,exert:0,windMult:.5},
+    'moped':{name:'Moped',icon:'moped',speed:-18,exert:0,windMult:.2},
   };
+  const WIND_OFF={calm:0,light:-4,moderate:-8,strong:-14};
+  const SUN_OFF={full:8,partial:3,overcast:0};
+  const WEEK_SUN={sunny:5,mixed:2,cloudy:-1};
+  const STORE='feelslike.v3';
 
-  function sceneHour() {
-    if (departureIsNow) return new Date().getHours();
-    const v = document.getElementById('departureInput').value;
-    return v ? new Date(v).getHours() : new Date().getHours();
+  // ── persistence ──
+  function save(){try{localStorage.setItem(STORE,JSON.stringify({unit,activity,lat,lon,locationName}))}catch(e){}}
+  function load(){try{const s=JSON.parse(localStorage.getItem(STORE)||'{}');
+    if(s.unit==='C'||s.unit==='F')unit=s.unit; if(s.activity&&ACTS[s.activity])activity=s.activity;
+    if(typeof s.lat==='number'){lat=s.lat;lon=s.lon} if(s.locationName)locationName=s.locationName; return s;}catch(e){return{}}}
+
+  // ── core ──
+  function humidAdj(tF,h){if(tF>75)return Math.round((h-40)*.12);if(tF<45)return Math.round((h-40)*-.04);return 0;}
+  function effTemp(tF,h,act,w,s,sh){const a=ACTS[act];return Math.round(tF+a.speed+a.exert+Math.round(WIND_OFF[w]*a.windMult)+(sh?0:SUN_OFF[s])+humidAdj(tF,h));}
+  function computeEff(c){
+    const a=ACTS[activity];
+    if(c.apparentF!=null){let e=c.apparentF+a.speed+a.exert;if(shaded)e-=4;return Math.round(e);}
+    return effTemp(c.tempF,c.humidity,activity,c.wind,c.sun,shaded);
   }
-  function sceneNowMs() {
-    if (departureIsNow) return Date.now();
-    const v = document.getElementById('departureInput').value;
-    return v ? new Date(v).getTime() : Date.now();
+  function getComfort(eff){
+    if(eff<20)return{w:'FREEZING'};if(eff<30)return{w:'VERY COLD'};if(eff<40)return{w:'COLD'};
+    if(eff<50)return{w:'CHILLY'};if(eff<58)return{w:'COOL'};if(eff<65)return{w:'MILD'};
+    if(eff<72)return{w:'PERFECT'};if(eff<80)return{w:'WARM'};if(eff<90)return{w:'HOT'};return{w:'VERY HOT'};
+  }
+  function feelColor(eff){const st=[[10,'#3a6ea8'],[30,'#4a8ac4'],[44,'#6aa6cf'],[54,'#86bcb6'],[62,'#74bd9b'],[69,'#7cc486'],[75,'#c8b86c'],[82,'#e3a052'],[89,'#df8740'],[95,'#d3612e']];let c=st[0][1];for(const[t,col]of st)if(eff>=t)c=col;return c;}
+  function dT(tF){return unit==='F'?Math.round(tF)+'°':Math.round((tF-32)*5/9)+'°';}
+  function markerPct(eff){return Math.max(2,Math.min(98,((eff+10)/115)*100));}
+
+  function getFabric(eff,h){
+    if(eff>=78&&h>=45)return{c:'Linen',i:'linen',r:'Hot & humid — linen breathes and dries far better than cotton.'};
+    if(eff>=70&&h>=55)return{c:'Linen',i:'linen',r:'Warm and muggy — linen stays cooler and wicks moisture.'};
+    if(eff>=72)return{c:'Linen / cotton',i:'linen',r:'Warm but dry — either works; linen is slightly cooler.'};
+    if(eff>=58)return{c:'Cotton',i:'shortsleeve',r:'Mild — cotton is comfortable and easy.'};
+    return{c:'Cotton',i:'longsleeve',r:'Cool — cotton holds a little more warmth than linen.'};
   }
 
-  // Decide scene from whatever we know. Prefers live data; falls back to manual toggles.
-  function currentSceneKey() {
-    let isDay = live.isDay;
-    if (isDay == null) { const h = sceneHour(); isDay = h >= 7 && h < 20; }
+  function precipKind(code){if(code==null)return null;if(code>=95)return'storm';if((code>=71&&code<=77)||code===85||code===86)return'snow';if((code>=51&&code<=67)||(code>=80&&code<=82))return'rain';return null;}
+  function getOutfit(eff,h,c){
+    const it=[], T=dT(eff);
+    if(eff<28)it.push({i:'coat',n:'Heavy Coat',l:1,why:'Feels like '+T+' — serious cold.'});
+    else if(eff<45)it.push({i:'jacket',n:'Jacket',l:1,why:'Feels like '+T+' — you’ll want it.'});
+    else if(eff<58)it.push({i:'lightjacket',n:'Light Jacket',l:0,why:'Cool enough to want a layer.'});
+    if(eff<55)it.push({i:'hoodie',n:'Hoodie',l:1,why:'A warm mid-layer takes the edge off.'});
+    else if(eff<65)it.push({i:'hoodie',n:'Hoodie',l:0,why:'Optional — it’s borderline.'});
+    if(eff<60)it.push({i:'longsleeve',n:'Long Sleeve',l:1,why:'Keeps your arms covered at '+T+'.'});
+    else if(eff<82)it.push({i:'shortsleeve',n:'Short Sleeve',l:1,why:'Warm enough for bare arms.'});
+    else it.push({i:'linen',n:'Flowy Linen',l:1,why:'Hot — go light and breezy.'});
+    if(eff<48)it.push({i:'warmpants',n:'Warm Pants',l:1,why:'Cold — keep your legs covered.'});
+    else if(eff<65)it.push({i:'pants',n:'Pants',l:1,why:'Legs covered at '+T+'.'});
+    else if(eff<75)it.push({i:'pants',n:'Pants or Shorts',l:1,why:'Comfortable either way at '+T+' — your call.'});
+    else it.push({i:'shorts',n:'Shorts',l:1,why:'Warm enough for bare legs.'});
+    // winter accessories travel together — one item, all or nothing
+    if(eff<25)it.push({i:'scarf',n:'Accessories',l:1,why:'Cold enough for a hat, gloves and a scarf.'});
+    else if(eff<40)it.push({i:'scarf',n:'Accessories',l:0,why:'A hat, gloves or scarf if you run cold.'});
+    // snow needs a waterproof outer layer (still "what to wear")
+    if(c && precipKind(c.code)==='snow')it.push({i:'shell',n:'Waterproof',l:1,why:'Snow expected — a waterproof shell keeps you dry.'});
+    return it;
+  }
 
-    // sunrise / sunset window (live only), only when clear-ish
-    if (live.sunriseT && live.sunsetT) {
-      const now = sceneNowMs();
-      const near = (t) => Math.abs(now - t) < 50 * 60000;
-      const kind = precipKind(live.code);
-      if (!kind && (live.code == null || live.code <= 2)) {
-        if (near(live.sunriseT)) return 'sunrise';
-        if (near(live.sunsetT))  return 'sunset';
-      }
+  // ── pool ──
+  function estimatePool(wk,wks,tF,s){let p=(wk*.65+tF*.35)-10;p+=WEEK_SUN[wks];p+=s==='full'?2:s==='partial'?1:0;return Math.max(50,Math.min(95,Math.round(p)));}
+  function poolGlance(pt,air,w,s){
+    // Three states: swim · cold plunge (with a max duration) · neither.
+    let vd,go;
+    if(pt>=74){ vd = air>=72 ? 'Enjoy Your Pool Day' : 'Pool’s Warm, Air Is Cool'; go=2; }
+    else if(pt>=68){ vd='Not Pool Weather'; go=0; }          // lukewarm — too cool to swim, too warm to plunge
+    else if(pt>=45){
+      const mins = pt<50?'2–4':pt<56?'5–10':pt<62?'10–15':'15–20';
+      vd='Cold Plunge · '+mins+' min max'; go=1;
     }
+    else{ vd='Not Pool Weather'; go=0; }                     // dangerously cold (detail in the info sheet)
+    const sub = pt<60?'Water is very cold':pt<68?'Water is cold':pt<74?'Water is cool':pt<82?'Water is comfortable':'Water is warm';
+    return{vd,sub,go,pt};
+  }
+  function coldTherapy(pt){
+    if(pt>=68)return null;
+    if(pt<45)return{cls:'warn',i:'snow',t:'<b>Dangerously cold.</b> Risk of cold shock — not safe for immersion.'};
+    if(pt<56)return{cls:'cool',i:'snow',t:'<b>Prime cold-therapy range.</b> ~'+dT(pt)+' is ideal for recovery — limit to 10–15 min.'};
+    if(pt<62)return{cls:'cool',i:'snow',t:'<b>Good cold-therapy range.</b> Real recovery benefit, easier than an ice bath.'};
+    return{cls:'cool',i:'snow',t:'<b>Mild cold therapy.</b> Warmer edge — some benefit for soreness.'};
+  }
 
-    const suffix = isDay ? 'day' : 'night';
+  function getAdvice(eff,c){
+    const a=ACTS[activity];let m='For a <b>'+a.name.toLowerCase()+'</b>: ';
+    if(eff<25)m+='real cold — protect your extremities and layer up.';
+    else if(eff<35)m+='bundle up; a proper jacket and warm layers are a must.';
+    else if(eff<45)m+='cold enough to feel it — full jacket and long layers.';
+    else if(eff<55)m+='cool; a light jacket or heavy hoodie keeps you comfortable.';
+    else if(eff<62)m+='mild — a light layer is a smart safety net.';
+    else if(eff<70)m+='comfortable; short sleeves work well.';
+    else if(eff<80)m+='warm — light clothing, shorts are great.';
+    else m+='hot — go as light as possible and hydrate.';
+    if(activity==='moped')m+=' Moped headwind is significant — even mild days feel much colder at speed.';
+    else if(activity==='run')m+=' You heat up fast running — dress lighter than feels right.';
+    else if(activity==='bike')m+=' Biking makes its own breeze — you\'ll feel cooler than standing still.';
+    if(c){const k=precipKind(c.code),p=c.precipProb;
+      if(k==='storm')m+=' Thunderstorms expected — consider waiting it out.';
+      else if(k==='snow')m+=' Snow in the forecast — watch for slick footing.';
+      else if(k==='rain')m+=p!=null?' '+p+'% chance of rain — bring cover.':' Rain in the forecast — bring cover.';
+      if(c.isDay&&c.uv!=null&&c.uv>=6)m+=' UV '+Math.round(c.uv)+' — sunscreen is worth it.';}
+    return m;
+  }
 
-    if (live.code != null) {
-      const k = precipKind(live.code);
-      if (k === 'storm') return 'storm-' + suffix;
-      if (k === 'snow')  return 'snow-'  + suffix;
-      if (k === 'rain')  return 'rain-'  + suffix;
-      if (live.code === 45 || live.code === 48) return 'fog-' + suffix;
-      if (live.code === 3) return 'overcast-' + suffix;
-      if (live.code === 2) return 'cloudy-' + suffix;
-      return 'clear-' + suffix; // 0,1
+  // ── snapshot of conditions at offset hours ──
+  function hourIndex(d){if(!hourlyForecast)return -1;const p=n=>String(n).padStart(2,'0');return hourlyForecast.time.indexOf(`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:00`);}
+  function snapshotAt(offs){
+    if(!hourlyForecast)return null;
+    const d=new Date();d.setHours(d.getHours()+offs);
+    const i=hourIndex(d); if(i<0)return null;
+    const H=hourlyForecast, mph=H.wind_speed_10m[i], cc=H.cloud_cover[i];
+    return {tempF:H.temperature_2m[i],humidity:H.relative_humidity_2m[i],apparentF:H.apparent_temperature[i],
+      windMph:mph, wind:mph<6?'calm':mph<13?'light':mph<21?'moderate':'strong',
+      sun:(H.is_day&&H.is_day[i]===0)?'overcast':cc<25?'full':cc<65?'partial':'overcast',
+      code:H.weather_code?H.weather_code[i]:null, precipProb:H.precipitation_probability?H.precipitation_probability[i]:null,
+      uv:H.uv_index?H.uv_index[i]:null, isDay:H.is_day?H.is_day[i]===1:true, time:d};
+  }
+  function currentConditions(){
+    if(dataMode==='live'&&hourlyForecast){const s=snapshotAt(offset);if(s)return s;}
+    return {tempF,humidity,apparentF:dataMode==='live'?apparentF:null,windMph:null,wind,sun,
+      code:null,precipProb:null,uv:null,isDay:true,time:new Date()};
+  }
+
+  // ── reactive sky ──
+  const SCENES={
+    'clear-day':{g:['#1f6fd4','#479ddf','#8ecdf0'],glow:'rgba(255,246,200,.55)',gp:'78% 16%',p:'',img:'clear-day'},
+    'clear-night':{g:['#070b1f','#121a3e','#202a58'],glow:'rgba(200,212,255,.3)',gp:'24% 18%',p:'',img:'clear-night'},
+    'partly-day':{g:['#4a82bf','#79a6cf','#aac6de'],glow:'rgba(253,243,208,.35)',gp:'80% 14%',p:'',img:'partly-day'},
+    'partly-night':{g:['#0c1430','#1b264c','#2c3766'],glow:'rgba(174,185,230,.22)',gp:'26% 16%',p:'',img:'partly-night'},
+    'overcast-day':{g:['#5f7184','#8595a6','#aab6c2'],glow:'rgba(232,237,242,.2)',gp:'50% 8%',p:'',img:'overcast'},
+    'overcast-night':{g:['#161c28','#262f3f','#363f52'],glow:'rgba(74,84,104,.3)',gp:'50% 10%',p:'',img:'overcast'},
+    'fog-day':{g:['#8a9399','#aab4bd','#cdd4da'],glow:'rgba(255,255,255,.18)',gp:'50% 30%',p:'',img:'fog'},
+    'fog-night':{g:['#20262f','#313945','#454f5d'],glow:'rgba(120,130,140,.18)',gp:'50% 30%',p:'',img:'fog'},
+    'rain-day':{g:['#44525f','#5e6f7e','#74858f'],glow:'rgba(220,230,236,.12)',gp:'50% 8%',p:'rain',img:'rain'},
+    'rain-night':{g:['#10161f','#1d2630','#2a3540'],glow:'rgba(120,140,160,.12)',gp:'50% 10%',p:'rain',img:'rain'},
+    'snow-day':{g:['#6f7f93','#97a7b8','#c6d2dd'],glow:'rgba(255,255,255,.22)',gp:'50% 12%',p:'snow',img:'snow'},
+    'snow-night':{g:['#1a2230','#2b3647','#3c4860'],glow:'rgba(200,212,228,.16)',gp:'50% 12%',p:'snow',img:'snow'},
+    'storm-day':{g:['#2b3340','#3d4658','#515b6f'],glow:'rgba(180,190,205,.1)',gp:'50% 8%',p:'rain',img:'storm'},
+    'storm-night':{g:['#0c0f16','#1a1f2b','#272d3b'],glow:'rgba(120,130,150,.1)',gp:'50% 10%',p:'rain',img:'storm'},
+    'sunrise':{g:['#f4a259','#ea7e8a','#5a6bb0'],glow:'rgba(255,217,160,.55)',gp:'50% 78%',p:'',img:'sunrise'},
+    'sunset':{g:['#ff7a5c','#d56a93','#43468f'],glow:'rgba(255,200,150,.5)',gp:'50% 80%',p:'',img:'sunset'},
+  };
+  function sceneKey(c){
+    const isDay=c.isDay!=null?c.isDay:true, sx=isDay?'day':'night', k=precipKind(c.code);
+    if(c.code!=null){
+      if(k==='storm')return'storm-'+sx; if(k==='snow')return'snow-'+sx; if(k==='rain')return'rain-'+sx;
+      if(c.code===45||c.code===48)return'fog-'+sx; if(c.code===3)return'overcast-'+sx; if(c.code===2)return'partly-'+sx;
+      return'clear-'+sx;
     }
-
-    // manual fallback from Sky toggle
-    if (sun === 'overcast') return 'overcast-' + suffix;
-    if (sun === 'partial')  return 'cloudy-' + suffix;
-    return 'clear-' + suffix;
+    if(c.sun==='overcast')return'overcast-'+sx; if(c.sun==='partial')return'partly-'+sx; return'clear-'+sx;
+  }
+  const imgCache={};
+  function applyScene(c){
+    const sc=SCENES[sceneKey(c)]||SCENES['clear-night'];
+    document.getElementById('sky').style.background=`linear-gradient(180deg,${sc.g[0]},${sc.g[1]} 52%,${sc.g[2]})`;
+    const gl=document.getElementById('glow');gl.style.background=`radial-gradient(120% 80% at ${sc.gp},${sc.glow},transparent 60%)`;
+    document.getElementById('precip').className=sc.p||'';
+    document.getElementById('themeColor').setAttribute('content',sc.g[0]);
+    // real scene art when present; the gradient + glow are the fallback while it loads / if absent
+    const url='assets/scene-'+sc.img+'.jpg', el=document.getElementById('sceneImg');
+    const show=()=>{el.style.backgroundImage=`url(${url})`;el.style.opacity='1';gl.style.opacity='0';};
+    const fallback=()=>{el.style.opacity='0';gl.style.opacity='1';};
+    if(imgCache[url]===true)show();
+    else if(imgCache[url]===undefined){fallback();const p=new Image();p.onload=()=>{imgCache[url]=true;if(sceneKey(currentConditions())===sceneKey(c))show();};p.onerror=()=>{imgCache[url]=false;};p.src=url;}
+    else fallback();
   }
 
-  function applyScene() {
-    const sc = SCENES[currentSceneKey()] || SCENES['clear-night'];
-    document.getElementById('sky').style.background =
-      `linear-gradient(180deg, ${sc.grad[0]} 0%, ${sc.grad[1]} 52%, ${sc.grad[2]} 100%)`;
-    const glow = document.getElementById('glow');
-    glow.style.background = `radial-gradient(120% 80% at ${sc.glowPos}, ${sc.glow} 0%, transparent 60%)`;
-    glow.style.opacity = '1';
-    document.getElementById('precip').className = sc.precip || '';
-    document.getElementById('themeColor').setAttribute('content', sc.grad[0]);
+  // ── render ──
+  function render(){
+    const c=currentConditions();
+    const eff=computeEff(c), cm=getComfort(eff), col=feelColor(eff);
+    document.getElementById('feelBig').textContent=dT(eff);
+    document.getElementById('feelBig').style.color=col;
+    document.getElementById('feelWord').textContent=cm.w;
+    document.getElementById('feelWord').style.color=col;
+    document.getElementById('feelTemp').textContent=dT(c.tempF);
+    document.getElementById('feelMk').style.left=markerPct(eff)+'%';
+
+    // wear answer (the hero) — tie it to the activity
+    lastFit=getOutfit(eff,c.humidity,dataMode==='live'?c:null);
+    document.getElementById('fitGrid').innerHTML=lastFit.map((o,idx)=>
+      '<div class="item" onclick="wearWhy('+idx+')"><div class="ic">'+svg(o.i)+'</div><div class="nm">'+o.n+'</div>'+(o.l?'':'<div class="tag">optional</div>')+'</div>').join('');
+    const fb=getFabric(eff,c.humidity);
+    fabricHTML=svg(fb.i)+'<span>Best in <b>'+fb.c.toLowerCase()+'</b></span>';
+    document.getElementById('fabricNote').innerHTML=fabricHTML;
+    selWear=null;
+
+    // chips
+    const chips=[];const k=precipKind(c.code);
+    if(c.precipProb!=null&&(k||c.precipProb>=10))chips.push('<span class="chip rain">'+svg('drop')+c.precipProb+'%</span>');
+    if(c.isDay&&c.uv!=null&&c.uv>=3)chips.push('<span class="chip uv">'+svg('sun')+'UV '+Math.round(c.uv)+'</span>');
+    if(c.windMph!=null){const ws=unit==='F'?Math.round(c.windMph)+' mph':Math.round(c.windMph*1.609)+' km/h';chips.push('<span class="chip wind">'+svg('wind')+ws+'</span>');}
+    document.getElementById('chips').innerHTML=chips.join('');
+
+    // delta vs now + a layering hint for the round trip
+    const dEl=document.getElementById('delta'), lh=document.getElementById('layHint');
+    if(dataMode==='live'&&now0&&offset>0){
+      const nowEff=computeEff(now0), diff=eff-nowEff;
+      dEl.style.display='';
+      if(Math.abs(diff)<2){dEl.className='delta same';dEl.innerHTML='≈ same as now';}
+      else{const warm=diff>0;dEl.className='delta '+(warm?'warm':'cool');dEl.innerHTML=svg(warm?'up':'down')+(warm?'+':'')+(unit==='F'?diff:Math.round(diff*5/9))+'° vs now';}
+      let hint='';
+      if(diff<=-6)hint=svg('down')+'Cooler later — bring a layer for the way back.';
+      else if(diff>=6)hint=svg('up')+'Warmer later — you can shed a layer.';
+      lh.innerHTML=hint;lh.style.display=hint?'':'none';
+    } else {dEl.style.display='none';lh.style.display='none';}
+
+    // pool
+    const pt=estimatePool(weekTempF,weekSun,c.tempF,c.sun), pg=poolGlance(pt,c.tempF,c.wind,c.sun);
+    {const pv=pg.vd.split(' · ');document.getElementById('poolVerdict').innerHTML=pv[0]+(pv[1]?' <span class="vd-sub">· '+pv[1]+'</span>':'');}
+    document.getElementById('poolMk').style.left=Math.max(3,Math.min(97,(pt-50)/45*100))+'%';
+
+    // detail sheets (kept fresh)
+    document.getElementById('adviceDet').innerHTML=getAdvice(eff,dataMode==='live'?c:null);
+    document.getElementById('breakdownDet').innerHTML=breakdownHTML(c,eff);
+    const ct=coldTherapy(pt);
+    document.getElementById('poolDet').innerHTML=
+      '<div class="brow"><span>Verdict</span><b>'+pg.vd+'</b></div>'+
+      '<div class="brow"><span>Water</span><b>'+pg.sub+' · ~'+dT(pt)+'</b></div>'+
+      '<div class="brow"><span>Air</span><b>'+dT(c.tempF)+'</b></div>';
+    document.getElementById('coldDet').innerHTML=ct?'<div class="note '+ct.cls+'">'+svg(ct.i)+'<div>'+ct.t+'</div></div>':'';
+
+    applyScene(c);
+  }
+  function breakdownHTML(c,eff){
+    const a=ACTS[activity];let h='';
+    h+='<div class="brow"><span>Air temperature</span><b>'+dT(c.tempF)+'</b></div>';
+    if(c.apparentF!=null)h+='<div class="brow"><span>Apparent (wind, sun, humidity)</span><b>'+dT(c.apparentF)+'</b></div>';
+    if(a.exert)h+='<div class="brow"><span>Body heat ('+a.name.toLowerCase()+')</span><b>+'+(unit==='F'?a.exert:Math.round(a.exert*5/9))+'°</b></div>';
+    if(a.speed)h+='<div class="brow"><span>Headwind at speed</span><b>'+(unit==='F'?a.speed:Math.round(a.speed*5/9))+'°</b></div>';
+    if(shaded)h+='<div class="brow"><span>Shaded route</span><b>-'+(unit==='F'?4:2)+'°</b></div>';
+    h+='<div class="brow"><span>Feels like</span><b style="color:'+feelColor(eff)+'">'+dT(eff)+'</b></div>';
+    return h;
   }
 
-  // ─── Trip forecast ───────────────────────────────────────────────────────────
-  function toLocalDTStr(date) {
-    const p = n => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${p(date.getMonth()+1)}-${p(date.getDate())}T${p(date.getHours())}:00`;
+  // ── activity row ──
+  function buildActivity(){
+    document.getElementById('actRow').innerHTML=Object.entries(ACTS).map(([k,a])=>
+      '<button class="'+(k===activity?'on':'')+'" data-a="'+k+'" onclick="setActivity(\''+k+'\')">'+svg(a.icon)+'<span>'+a.name+'</span></button>').join('');
+  }
+  function setActivity(k){activity=k;document.querySelectorAll('#actRow button').forEach(b=>b.classList.toggle('on',b.dataset.a===k));save();render();}
+
+  // tap a wear item → show its one-line reason in the fabric line; tap again to dismiss
+  function wearWhy(i){
+    const items=document.querySelectorAll('#fitGrid .item'), note=document.getElementById('fabricNote');
+    if(selWear===i){selWear=null;items.forEach(x=>x.classList.remove('sel'));note.innerHTML=fabricHTML;return;}
+    selWear=i;items.forEach((x,j)=>x.classList.toggle('sel',j===i));
+    const o=lastFit[i];if(o)note.innerHTML=svg(o.i)+'<span>'+o.why+'</span>';
   }
 
-  function getWeatherAtHour(dt) {
-    if (!hourlyForecast) return null;
-    const target = toLocalDTStr(dt);
-    const idx = hourlyForecast.time.indexOf(target);
-    if (idx === -1) return null;
-    return {
-      tempF:      Math.round(hourlyForecast.temperature_2m[idx]),
-      humidity:   Math.round(hourlyForecast.relative_humidity_2m[idx]),
-      windMph:    hourlyForecast.wind_speed_10m[idx],
-      cloudCover: hourlyForecast.cloud_cover[idx],
-      code:       hourlyForecast.weather_code ? hourlyForecast.weather_code[idx] : null,
-      precipProb: hourlyForecast.precipitation_probability ? hourlyForecast.precipitation_probability[idx] : null,
-      uv:         hourlyForecast.uv_index ? hourlyForecast.uv_index[idx] : null,
-      isDay:      hourlyForecast.is_day ? hourlyForecast.is_day[idx] === 1 : null,
-    };
-  }
-
-  function toConditions(w, dt) {
-    const mph    = w.windMph;
-    const windK  = mph < 6 ? 'calm' : mph < 13 ? 'light' : mph < 21 ? 'moderate' : 'strong';
-    const h      = dt ? dt.getHours() : 12;
-    const isNight = w.isDay != null ? !w.isDay : (h < 7 || h >= 20);
-    const sunK   = isNight ? 'overcast' : (w.cloudCover < 25 ? 'full' : w.cloudCover < 65 ? 'partial' : 'overcast');
-    return { tempF: w.tempF, humidity: w.humidity, wind: windK, sun: sunK, isNight,
-             ctx: { code: w.code, isDay: !isNight, precipProb: w.precipProb, uv: w.uv } };
-  }
-
-  function getLayeringAdvice(depEff, retEff, depTime, retTime) {
-    const diff = retEff - depEff;
-    const depH = depTime.getHours(), retH = retTime.getHours();
-    let msg;
-    if      (Math.abs(diff) < 4) msg = '<strong>Similar conditions throughout</strong> — one outfit works the whole trip.';
-    else if (diff >= 14)  msg = `<strong>Much warmer returning (+${Math.round(diff)}°).</strong> Dress light — bring a layer you can shed or tie around your waist for the cooler start.`;
-    else if (diff >= 6)   msg = `<strong>Noticeably warmer returning (+${Math.round(diff)}°).</strong> Dress for return temps; bring a removable layer for departure.`;
-    else if (diff > 0)    msg = `<strong>Slightly warmer returning (+${Math.round(diff)}°).</strong> One outfit works — you'll be comfortable either way.`;
-    else if (diff <= -14) msg = `<strong>Significantly cooler returning (${Math.round(diff)}°).</strong> Pack a real layer for the return — you'll need it.`;
-    else if (diff <= -6)  msg = `<strong>Noticeably cooler returning (${Math.round(diff)}°).</strong> Bring a layer to add when heading back.`;
-    else                  msg = `<strong>Slightly cooler returning (${Math.round(diff)}°).</strong> One outfit mostly works — maybe tuck in a light layer.`;
-    if (depH < 10 && retH >= 13 && retH < 18)  msg += ' ☀️ Classic morning-to-afternoon warmup.';
-    else if (depH >= 13 && retH >= 20)          msg += ' 🌙 Evenings cool off fast — especially on a bike, scooter, or moped.';
-    else if (depH >= 10 && retH >= 19)          msg += ' 🌆 Afternoon-to-evening can drop significantly.';
-    return msg;
-  }
-
-  function renderTripForecast() {
-    const card   = document.getElementById('tripForecastCard');
-    const retVal = document.getElementById('returnInput').value;
-    const depVal = document.getElementById('departureInput').value;
-    if (!retVal) { card.style.display = 'none'; return; }
-
-    const depTime = depVal ? new Date(depVal) : new Date();
-    const retTime = new Date(retVal);
-    if (retTime <= depTime) { card.style.display = 'none'; return; }
-
-    card.style.display = 'block';
-    const grid = document.getElementById('tripForecastGrid');
-    const note = document.getElementById('layeringNote');
-
-    const depW = getWeatherAtHour(depTime);
-    const retW = getWeatherAtHour(retTime);
-
-    if (!depW || !retW) {
-      grid.innerHTML = `<div class="no-forecast-note" style="grid-column:1/-1;">Use 📍 or search a city to enable hourly forecast comparison.</div>`;
-      note.innerHTML = '';
-      return;
-    }
-
-    const depC   = toConditions(depW, depTime);
-    const retC   = toConditions(retW, retTime);
-    const depEff = effTemp(depC.tempF, depC.humidity, activity, depC.wind, depC.sun, shaded);
-    const retEff = effTemp(retC.tempF, retC.humidity, activity, retC.wind, retC.sun, shaded);
-
-    const fmtT      = dt => dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    const windLabel = k  => ({ calm:'calm', light:'light wind', moderate:'mod. wind', strong:'strong wind' }[k]);
-    const sunLabel  = (k, isNight) => isNight ? '🌙 night' : ({ full:'☀️ full sun', partial:'🌤️ partly cloudy', overcast:'☁️ overcast' }[k]);
-
-    function outfitChips(eff, hum, ctx) {
-      return getOutfit(eff, hum, ctx)
-        .filter(i => i.l !== 'skip')
-        .map(i => `<div class="trip-chip ${i.l}"><span class="trip-chip-icon">${i.e}</span>${i.name}</div>`)
-        .join('');
-    }
-
-    grid.innerHTML = `
-      <div class="trip-fcol">
-        <div class="trip-fcol-label">Leaving · ${fmtT(depTime)}</div>
-        <div class="trip-fcol-conditions">${dT(depC.tempF)} feels like ${dT(depEff)} · ${sunLabel(depC.sun, depC.isNight)} · ${windLabel(depC.wind)}</div>
-        <div class="trip-outfit-chips">${outfitChips(depEff, depC.humidity, depC.ctx)}</div>
-      </div>
-      <div class="trip-big-arrow">→</div>
-      <div class="trip-fcol">
-        <div class="trip-fcol-label">Returning · ${fmtT(retTime)}</div>
-        <div class="trip-fcol-conditions">${dT(retC.tempF)} feels like ${dT(retEff)} · ${sunLabel(retC.sun, retC.isNight)} · ${windLabel(retC.wind)}</div>
-        <div class="trip-outfit-chips">${outfitChips(retEff, retC.humidity, retC.ctx)}</div>
-      </div>`;
-    note.innerHTML = getLayeringAdvice(depEff, retEff, depTime, retTime);
-  }
-
-  // ─── Trip time controls ───────────────────────────────────────────────────────
-  function nowToInputStr() {
-    const d = new Date();
-    const p = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-  }
-
-  function setDepartureNow() {
-    departureIsNow = true;
-    document.getElementById('departureInput').value = nowToInputStr();
-    document.getElementById('weatherLabel').textContent = '';
-    if (hourlyForecast) {
-      const now = new Date();
-      const w = getWeatherAtHour(now);
-      if (w) { const c = toConditions(w, now); tempF = c.tempF; humidity = c.humidity; wind = c.wind; sun = c.sun; live = {...live, ...c.ctx}; syncUIFromState(); }
-    }
-    render(); renderTripForecast();
-  }
-
-  function showReturnInput() {
-    document.getElementById('addRetBtn').style.display = 'none';
-    const wrap = document.getElementById('returnInputWrap');
-    wrap.style.display = 'flex';
-    const dep = document.getElementById('departureInput').value;
-    const base = dep ? new Date(dep) : new Date();
-    base.setHours(base.getHours() + 2);
-    const p = n => String(n).padStart(2, '0');
-    document.getElementById('returnInput').value =
-      `${base.getFullYear()}-${p(base.getMonth()+1)}-${p(base.getDate())}T${p(base.getHours())}:${p(base.getMinutes())}`;
-    renderTripForecast();
-  }
-
-  function clearReturn() {
-    document.getElementById('returnInput').value = '';
-    document.getElementById('returnInputWrap').style.display = 'none';
-    document.getElementById('addRetBtn').style.display = '';
-    document.getElementById('tripForecastCard').style.display = 'none';
-  }
-
-  function onDepartureChange() {
-    const val = document.getElementById('departureInput').value;
-    if (!val) { setDepartureNow(); return; }
-    const dt  = new Date(val);
-    const now = new Date();
-    departureIsNow = Math.abs(dt - now) < 30 * 60000;
-    if (!departureIsNow && hourlyForecast) {
-      const w = getWeatherAtHour(dt);
-      if (w) { const c = toConditions(w, dt); tempF = c.tempF; humidity = c.humidity; wind = c.wind; sun = c.sun; live = {...live, ...c.ctx}; syncUIFromState(); }
-    }
-    const label = departureIsNow ? '' : `· ${dt.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' })}`;
-    document.getElementById('weatherLabel').textContent = label;
-    render(); renderTripForecast();
-  }
-
-  function onReturnChange() { renderTripForecast(); }
-
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
-  function dT(tF) { return unit === 'F' ? `${tF}°F` : `${Math.round((tF-32)*5/9)}°C`; }
-  function markerPct(eff) { return Math.max(0, Math.min(100, ((eff - (-10)) / 115) * 100)); }
-  function toggleSection(id) {
-    const body  = document.getElementById(id + 'Body');
-    const arrow = document.getElementById(id + 'Arrow');
-    const isOpen = body.classList.contains('open');
-    body.classList.toggle('open', !isOpen);
-    arrow.classList.toggle('open', !isOpen);
-  }
-
-  function toggleBreakdown() {
-    const bd  = document.getElementById('breakdownEl');
-    const btn = document.getElementById('breakdownToggle');
-    const hidden = bd.classList.toggle('hidden');
-    btn.textContent = hidden ? 'see why ▾' : 'see why ▴';
-  }
-
-  // ─── Live extras chips (rain % / UV / wind) ────────────────────────────────────
-  function renderLiveExtras() {
-    const el = document.getElementById('liveExtras');
-    if (!hourlyForecast || (live.code == null && live.precipProb == null)) { el.innerHTML = ''; return; }
-    const chips = [];
-    const kind = precipKind(live.code);
-    if (live.precipProb != null && (kind || live.precipProb >= 10)) {
-      const icon = kind === 'snow' ? '🌨️' : kind === 'storm' ? '⛈️' : '🌧️';
-      chips.push(`<span class="lx-chip">${icon} ${live.precipProb}%</span>`);
-    }
-    if (live.isDay && live.uv != null && live.uv >= 3) chips.push(`<span class="lx-chip">☀️ UV ${Math.round(live.uv)}</span>`);
-    if (live.windMph != null) chips.push(`<span class="lx-chip">💨 ${Math.round(live.windMph)} mph</span>`);
-    el.innerHTML = chips.join('');
-  }
-
-  // ─── Main render ─────────────────────────────────────────────────────────────
-  function render() {
-    const eff     = effTemp(tempF, humidity, activity, wind, sun, shaded);
-    const act     = ACTS[activity];
-    const hAdj    = humidAdj(tempF, humidity);
-    const windOff = Math.round(WIND_OFFSETS[wind] * act.windMult);
-    const sunOff  = shaded ? 0 : SUN_OFFSETS[sun];
-    const comfort = getComfort(eff);
-    const ctx     = hourlyForecast ? live : null;
-
-    document.getElementById('comfortEmoji').textContent = comfort.emoji;
-    const cw = document.getElementById('comfortWord');
-    cw.textContent = comfort.word; cw.style.color = comfort.color;
-    document.getElementById('comfortTemps').innerHTML = `feels like <strong>${dT(eff)}</strong> · actual ${dT(tempF)}`;
-    document.getElementById('comfortMarker').style.left = markerPct(eff) + '%';
-    renderLiveExtras();
-
-    let bhtml = `<div class="brow"><span>Actual temp</span><span class="bval">${dT(tempF)}</span></div>`;
-    if (act.exert) bhtml += `<div class="brow"><span>Body heat</span><span class="bval hot-val">+${unit==='F'?act.exert:Math.round(act.exert*5/9)}°</span></div>`;
-    if (act.speed) bhtml += `<div class="brow"><span>${act.name} headwind</span><span class="bval cold-val">${unit==='F'?act.speed:Math.round(act.speed*5/9)}°</span></div>`;
-    if (windOff)   bhtml += `<div class="brow"><span>Ambient wind</span><span class="bval cold-val">${unit==='F'?windOff:Math.round(windOff*5/9)}°</span></div>`;
-    if (shaded && SUN_OFFSETS[sun] > 0)
-      bhtml += `<div class="brow"><span>Sun warmth (shaded)</span><span class="bval" style="color:var(--muted)">— blocked</span></div>`;
-    else if (sunOff)
-      bhtml += `<div class="brow"><span>Sun warmth</span><span class="bval sun-val">+${unit==='F'?sunOff:Math.round(sunOff*5/9)}°</span></div>`;
-    if (hAdj) bhtml += `<div class="brow"><span>Humidity</span><span class="bval ${hAdj>0?'hot-val':'cold-val'}">${hAdj>0?'+':''}${unit==='F'?hAdj:Math.round(hAdj*5/9)}°</span></div>`;
-    document.getElementById('breakdownEl').innerHTML = bhtml;
-
-    const outfit = getOutfit(eff, humidity, ctx);
-    document.getElementById('outfitGrid').innerHTML = outfit
-      .filter(i => i.l !== 'skip')
-      .map(i => `<div class="outfit-item"><div class="outfit-dot ${i.l}"></div><div class="outfit-icon">${i.e}</div><div><div class="outfit-name">${i.name}</div><div class="outfit-detail">${i.d}</div></div></div>`)
-      .join('');
-
-    const fab = getFabric(eff, humidity);
-    document.getElementById('fabricBanner').innerHTML = `${fab.icon} <strong>${fab.choice}</strong> — ${fab.reason}`;
-
-    const pt   = estimatePoolTemp(weekTempF, weekSun, tempF, sun);
-    const pool = getPoolInfo(pt, tempF, wind, sun);
-    const tbc  = pool.poolCls==='great'?'#4ade80':pool.poolCls==='good'?'#a3e635':pool.poolCls==='cold'?'#60a5fa':'#fb923c';
-    document.getElementById('poolStatus').className = `pool-status ${pool.poolCls}`;
-    document.getElementById('poolStatus').innerHTML =
-      `<div class="pool-emoji">${pool.emoji}</div><div class="pool-main"><div class="pool-verdict">${pool.verdict}</div><div class="pool-sub">${pool.sub}</div></div><div><div class="pool-temp-badge" style="color:${tbc}">~${dT(pt)}</div><div class="pool-temp-label">est. water</div></div>`;
-    document.getElementById('coldTherapyNote').innerHTML = pool.coldTherapy
-      ? `<div class="cold-therapy-note ${pool.coldTherapy.safe?'ct-safe':'ct-warn'}"><span class="ct-icon">${pool.coldTherapy.icon}</span><div><span class="ct-label">${pool.coldTherapy.label}</span> — <span class="ct-note">${pool.coldTherapy.note}</span></div></div>`
-      : '';
-
-    document.getElementById('adviceEl').innerHTML = getAdvice(eff, activity, wind, sun, ctx);
-
-    applyScene();
-  }
-
-  // ─── State setters ────────────────────────────────────────────────────────────
-  // Manual edits clear the live weather_code so the sky follows the Sky toggle, not stale live data.
-  function setActivity(act) {
-    activity = act;
-    document.querySelectorAll('.act-pill').forEach(b => b.classList.remove('active'));
-    document.getElementById('act-'+act).classList.add('active');
-    saveState();
-    render(); renderTripForecast();
-  }
-  function setWind(w)    { wind = w;    ['calm','light','moderate','strong'].forEach(x => document.getElementById('wind-'+x).classList.toggle('active',x===w)); render(); renderTripForecast(); }
-  function setSun(s)     { sun = s; live.code = null; ['full','partial','overcast'].forEach(x => document.getElementById('sun-'+x).classList.toggle('active',x===s)); render(); renderTripForecast(); }
-  function setWeekSun(s) { weekSun = s; ['sunny','mixed','cloudy'].forEach(x => document.getElementById('wsun-'+x).classList.toggle('active',x===s)); render(); }
-  function setShaded()   { shaded = !shaded; document.getElementById('shadedBtn').classList.toggle('active',shaded); render(); renderTripForecast(); }
-  function setUnit(u) {
-    unit = u;
-    document.getElementById('btnF').classList.toggle('active', u==='F');
-    document.getElementById('btnC').classList.toggle('active', u==='C');
-    document.getElementById('btnF').setAttribute('aria-pressed', u==='F');
-    document.getElementById('btnC').setAttribute('aria-pressed', u==='C');
-    const sl = document.getElementById('tempSlider'), wsl = document.getElementById('weekTempSlider');
-    if (u === 'C') {
-      const c = Math.round((tempF-32)*5/9), wc = Math.round((weekTempF-32)*5/9);
-      sl.min=-23; sl.max=41; sl.value=c; wsl.min=-23; wsl.max=41; wsl.value=wc;
-      document.getElementById('tempDisplay').textContent=c; document.getElementById('weekTempDisplay').textContent=wc;
-    } else {
-      sl.min=-10; sl.max=105; sl.value=tempF; wsl.min=-10; wsl.max=105; wsl.value=weekTempF;
-      document.getElementById('tempDisplay').textContent=tempF; document.getElementById('weekTempDisplay').textContent=weekTempF;
-    }
-    document.getElementById('tempUnitLbl').textContent = u==='F'?'°F':'°C';
-    document.getElementById('weekTempUnitLbl').textContent = u==='F'?'°F':'°C';
-    saveState();
-    render(); renderTripForecast();
-  }
-
-  function showTab(tab) {
-    document.querySelectorAll('.tab').forEach((t, i) => {
-      const on = ['today','trip'][i] === tab;
-      t.classList.toggle('active', on);
-      t.setAttribute('aria-selected', on);
-    });
-    document.getElementById('tab-today').style.display = tab === 'today' ? 'block' : 'none';
-    document.getElementById('tab-trip').style.display  = tab === 'trip'  ? 'block' : 'none';
-  }
-
-  // ─── Slider listeners ─────────────────────────────────────────────────────────
-  document.getElementById('tempSlider').addEventListener('input', function() {
-    live.code = null;
-    if (unit==='F') { tempF=parseInt(this.value); document.getElementById('tempDisplay').textContent=tempF; }
-    else { const c=parseInt(this.value); document.getElementById('tempDisplay').textContent=c; tempF=Math.round(c*9/5+32); }
-    render(); renderTripForecast();
-  });
-  document.getElementById('humidSlider').addEventListener('input', function() {
-    humidity=parseInt(this.value); document.getElementById('humidDisplay').textContent=humidity; render(); renderTripForecast();
-  });
-  document.getElementById('weekTempSlider').addEventListener('input', function() {
-    if (unit==='F') { weekTempF=parseInt(this.value); document.getElementById('weekTempDisplay').textContent=weekTempF; }
-    else { const c=parseInt(this.value); document.getElementById('weekTempDisplay').textContent=c; weekTempF=Math.round(c*9/5+32); }
+  // ── scrubber ──
+  document.getElementById('timeRange').addEventListener('input',function(){
+    offset=parseInt(this.value);
+    const lbl=document.getElementById('whenLbl'),tEl=document.getElementById('whenTime');
+    if(offset===0){lbl.textContent='Now';tEl.textContent='';}
+    else{const d=new Date();d.setHours(d.getHours()+offset);lbl.textContent='In '+offset+'h';tEl.textContent='· '+d.toLocaleTimeString([],{hour:'numeric'});}
     render();
   });
-  document.getElementById('locInput').addEventListener('keydown', e => { if (e.key==='Enter') searchLocation(); });
+  function syncScrubVisibility(){document.getElementById('scrubCard').style.opacity=(dataMode==='live'&&hourlyForecast)?'1':'.4';document.getElementById('timeRange').disabled=!(dataMode==='live'&&hourlyForecast);}
 
-  // ─── Location & live weather ──────────────────────────────────────────────────
-  function setLocStatus(status, label, retry) {
-    const el = document.getElementById('locStatus');
-    el.className = 'loc-status' + (status==='live' ? ' live' : status==='error'||status==='denied' ? ' error' : '');
-    el.innerHTML = `<div class="loc-dot${status==='loading'?' pulse':''}"></div><span id="locText"></span>`;
-    document.getElementById('locText').textContent = label;
-    if (retry) {
-      const b = document.createElement('button');
-      b.className = 'loc-retry'; b.textContent = 'Retry';
-      b.onclick = retry === 'geo' ? fetchLiveWeather : searchLocation;
-      el.appendChild(b);
-    }
+  // ── units ──
+  function setUnit(u){unit=u;document.getElementById('btnF').classList.toggle('on',u==='F');document.getElementById('btnC').classList.toggle('on',u==='C');
+    document.getElementById('tU').textContent=u==='F'?'°F':'°C';document.getElementById('wtU').textContent=u==='F'?'°F':'°C';
+    syncCog();save();render();}
+
+  // ── cog (manual) ──
+  function manualEdit(){dataMode='manual';apparentF=null;offset=0;document.getElementById('timeRange').value=0;document.getElementById('whenLbl').textContent='Now';document.getElementById('whenTime').textContent='';syncScrubVisibility();render();}
+  function syncCog(){
+    const c=unit==='C';
+    const ts=document.getElementById('tempSlider'),ws=document.getElementById('weekTempSlider');
+    if(c){ts.min=-23;ts.max=41;ts.value=Math.round((tempF-32)*5/9);ws.min=-23;ws.max=41;ws.value=Math.round((weekTempF-32)*5/9);}
+    else{ts.min=-10;ts.max=105;ts.value=tempF;ws.min=-10;ws.max=105;ws.value=weekTempF;}
+    document.getElementById('tDisp').textContent=ts.value;document.getElementById('wtDisp').textContent=ws.value;
+    document.getElementById('hDisp').textContent=humidity;document.getElementById('humidSlider').value=humidity;
+    document.querySelectorAll('#windSeg button').forEach(b=>b.classList.toggle('on',b.dataset.w===wind));
+    document.querySelectorAll('#skySeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===sun));
+    document.querySelectorAll('#wsunSeg button').forEach(b=>b.classList.toggle('on',b.dataset.ws===weekSun));
+    document.getElementById('shadeTog').classList.toggle('on',shaded);
+  }
+  document.getElementById('tempSlider').addEventListener('input',function(){const v=parseInt(this.value);document.getElementById('tDisp').textContent=v;tempF=unit==='F'?v:Math.round(v*9/5+32);manualEdit();});
+  document.getElementById('humidSlider').addEventListener('input',function(){humidity=parseInt(this.value);document.getElementById('hDisp').textContent=humidity;manualEdit();});
+  document.getElementById('weekTempSlider').addEventListener('input',function(){const v=parseInt(this.value);document.getElementById('wtDisp').textContent=v;weekTempF=unit==='F'?v:Math.round(v*9/5+32);render();});
+  document.getElementById('windSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;wind=b.dataset.w;syncCog();manualEdit();});
+  document.getElementById('skySeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sun=b.dataset.s;syncCog();manualEdit();});
+  document.getElementById('wsunSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;weekSun=b.dataset.ws;syncCog();render();});
+  function toggleShade(){shaded=!shaded;document.getElementById('shadeTog').classList.toggle('on',shaded);render();}
+
+  // ── sheets ──
+  function openSheet(id){closeSheets();document.getElementById('scrim').classList.add('open');document.getElementById('sheet-'+id).classList.add('open');if(id==='cog')syncCog();if(id==='city')setTimeout(()=>document.getElementById('locInput').focus(),250);}
+  function closeSheets(){document.getElementById('scrim').classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+  document.getElementById('locInput').addEventListener('keydown',e=>{if(e.key==='Enter')searchLocation();});
+
+  // ── location + weather ──
+  function setLoc(state,txt){const el=document.getElementById('locLine');el.className='loc-line'+(state==='live'?' live':state==='error'?' err':'');el.textContent=txt;}
+  function setCity(name){document.getElementById('cityName').textContent=name;}
+
+  async function fetchWeather(){
+    if(lat==null)return;
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,cloud_cover,wind_speed_10m,uv_index&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,weather_code,cloud_cover,wind_speed_10m,uv_index,is_day&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&past_days=7&forecast_days=2`;
+    const res=await fetch(url);if(!res.ok)throw new Error('w'+res.status);
+    const d=await res.json();hourlyForecast=d.hourly;dataMode='live';offset=0;document.getElementById('timeRange').value=0;
+    const cur=d.current;tempF=cur.temperature_2m;humidity=cur.relative_humidity_2m;apparentF=cur.apparent_temperature;
+    const mph=cur.wind_speed_10m,cc=cur.cloud_cover;
+    wind=mph<6?'calm':mph<13?'light':mph<21?'moderate':'strong';sun=cur.is_day===0?'overcast':cc<25?'full':cc<65?'partial':'overcast';
+    now0=snapshotAt(0)||{tempF,humidity,apparentF,wind,sun,code:cur.weather_code,precipProb:null,uv:cur.uv_index,isDay:cur.is_day===1,windMph:mph};
+    // give "now" its live extras
+    now0.code=cur.weather_code;now0.isDay=cur.is_day===1;now0.windMph=mph;if(now0.uv==null)now0.uv=cur.uv_index;
+    // pool week avg
+    const dy=d.daily,past=dy.temperature_2m_max.slice(0,7).map((mx,i)=>(mx+dy.temperature_2m_min[i])/2);
+    weekTempF=Math.round(past.reduce((a,b)=>a+b,0)/past.length);
+    const H=d.hourly,samp=H.time.reduce((ac,t,i)=>{const dt=new Date(t),ago=(Date.now()-dt.getTime())/864e5,h=dt.getHours();if(ago>=0&&ago<7&&h>=10&&h<=16)ac.push(H.cloud_cover[i]);return ac;},[]);
+    const avg=samp.length?samp.reduce((a,b)=>a+b,0)/samp.length:50;weekSun=avg<30?'sunny':avg<65?'mixed':'cloudy';
+    document.getElementById('whenLbl').textContent='Now';document.getElementById('whenTime').textContent='';
+    syncScrubVisibility();syncCog();render();
   }
 
-  function syncUIFromState() {
-    const sl = document.getElementById('tempSlider'), wsl = document.getElementById('weekTempSlider');
-    if (unit==='F') {
-      sl.value=tempF;      document.getElementById('tempDisplay').textContent=tempF;
-      wsl.value=weekTempF; document.getElementById('weekTempDisplay').textContent=weekTempF;
-    } else {
-      const c=Math.round((tempF-32)*5/9), wc=Math.round((weekTempF-32)*5/9);
-      sl.value=c;  document.getElementById('tempDisplay').textContent=c;
-      wsl.value=wc; document.getElementById('weekTempDisplay').textContent=wc;
-    }
-    document.getElementById('humidSlider').value=humidity;
-    document.getElementById('humidDisplay').textContent=humidity;
-    ['calm','light','moderate','strong'].forEach(x => document.getElementById('wind-'+x).classList.toggle('active',x===wind));
-    ['full','partial','overcast'].forEach(x => document.getElementById('sun-'+x).classList.toggle('active',x===sun));
-    ['sunny','mixed','cloudy'].forEach(x => document.getElementById('wsun-'+x).classList.toggle('active',x===weekSun));
+  async function fetchLiveWeather(){
+    setLoc('loading','Getting your location…');
+    try{
+      const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:10000}));
+      lat=pos.coords.latitude;lon=pos.coords.longitude;
+      const[,g]=await Promise.all([fetchWeather(),fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&format=json`)]);
+      const geo=await g.json(),ad=geo.address||{};
+      const city=ad.city||ad.town||ad.village||ad.county||'Your location';
+      const st=ad['ISO3166-2-lvl4']?ad['ISO3166-2-lvl4'].split('-').pop():(ad.state||'');
+      locationName=city+(st?', '+st:'');setCity(locationName);
+      setLoc('live',locationName+' · updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));save();
+      setTimeout(closeSheets,400);
+    }catch(e){if(e&&e.code===1)setLoc('error','Location denied — search a city instead.');else setLoc('error','Could not get location — search a city.');}
   }
 
-  async function fetchWeatherForLocation() {
-    if (lat == null || lon == null) return;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m,uv_index&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,weather_code,cloud_cover,wind_speed_10m,uv_index,is_day&daily=temperature_2m_max,temperature_2m_min,sunshine_duration,uv_index_max,sunrise,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&past_days=7&forecast_days=3`;
-    const res  = await fetch(url);
-    if (!res.ok) throw new Error('weather ' + res.status);
-    const data = await res.json();
-    hourlyForecast = data.hourly;
-
-    const curr = data.current;
-    live = {
-      code: curr.weather_code,
-      isDay: curr.is_day === 1,
-      precipProb: null,
-      uv: curr.uv_index,
-      windMph: curr.wind_speed_10m,
-      sunriseT: (data.daily.sunrise && data.daily.sunrise[7]) ? new Date(data.daily.sunrise[7]).getTime() : null,
-      sunsetT:  (data.daily.sunset  && data.daily.sunset[7])  ? new Date(data.daily.sunset[7]).getTime()  : null,
-    };
-    // pull "now" precip probability + uv from the matching hourly slot
-    const nowW = getWeatherAtHour(new Date());
-    if (nowW) { live.precipProb = nowW.precipProb; if (nowW.uv != null) live.uv = nowW.uv; }
-
-    if (departureIsNow) {
-      tempF    = Math.round(curr.temperature_2m);
-      humidity = Math.round(curr.relative_humidity_2m);
-      const mph = curr.wind_speed_10m;
-      wind = mph < 6 ? 'calm' : mph < 13 ? 'light' : mph < 21 ? 'moderate' : 'strong';
-      const cc = curr.cloud_cover;
-      sun  = cc < 25 ? 'full' : cc < 65 ? 'partial' : 'overcast';
-    }
-
-    const daily    = data.daily;
-    const pastAvgs = daily.temperature_2m_max.slice(0,7).map((mx,i) => (mx + daily.temperature_2m_min[i]) / 2);
-    weekTempF = Math.round(pastAvgs.reduce((a,b) => a+b, 0) / pastAvgs.length);
-    // Average cloud cover 10am–4pm over the past 7 days — peak solar heating hours
-    const hourly = data.hourly;
-    const peakCloudSamples = hourly.time.reduce((acc, t, i) => {
-      const date = new Date(t);
-      const daysAgo = (Date.now() - date.getTime()) / 86400000;
-      const h = date.getHours();
-      if (daysAgo >= 0 && daysAgo < 7 && h >= 10 && h <= 16) acc.push(hourly.cloud_cover[i]);
-      return acc;
-    }, []);
-    const avgPeakCloud = peakCloudSamples.length
-      ? peakCloudSamples.reduce((a, b) => a + b, 0) / peakCloudSamples.length
-      : 50;
-    weekSun = avgPeakCloud < 30 ? 'sunny' : avgPeakCloud < 65 ? 'mixed' : 'cloudy';
-
-    syncUIFromState();
-    render();
-    renderTripForecast();
+  async function searchLocation(){
+    const q=document.getElementById('locInput').value.trim();if(!q)return;setLoc('loading','Searching "'+q+'"…');
+    try{
+      const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`);
+      const d=await r.json();if(!d.results?.length){setLoc('error','"'+q+'" not found');return;}
+      const x=d.results[0];lat=x.latitude;lon=x.longitude;
+      locationName=x.name+(x.admin1?', '+x.admin1:'')+(x.country_code&&x.country_code!=='US'?', '+x.country_code:'');setCity(locationName);
+      await fetchWeather();setLoc('live',locationName+' · updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));save();
+      setTimeout(closeSheets,400);
+    }catch(e){setLoc('error','Search failed — check your connection.');}
   }
 
-  async function fetchLiveWeather() {
-    setLocStatus('loading', 'Getting your location…');
-    try {
-      const pos = await new Promise((res, rej) =>
-        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 10000 }));
-      lat = pos.coords.latitude; lon = pos.coords.longitude;
+  // auto refresh on return
+  let hid=null;
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){hid=Date.now();return;}if(lat!=null&&hid&&Date.now()-hid>6e5)fetchWeather().catch(()=>{});});
 
-      const [_, gRes] = await Promise.all([
-        fetchWeatherForLocation(),
-        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&format=json`)
-      ]);
-      const geo  = await gRes.json();
-      const addr = geo.address || {};
-      const city  = addr.city || addr.town || addr.village || addr.county || 'Your location';
-      const state = addr['ISO3166-2-lvl4'] ? addr['ISO3166-2-lvl4'].split('-').pop() : (addr.state || '');
-      locationName = `${city}${state ? ', '+state : ''}`;
-      lastUpdated = new Date();
-      const time  = lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('locInput').value = locationName;
-      setLocStatus('live', `${locationName} · ${time}`);
-      saveState();
-
-      if (departureIsNow) document.getElementById('departureInput').value = nowToInputStr();
-      renderTripForecast();
-    } catch (err) {
-      if (err && err.code === 1) setLocStatus('denied', 'Location denied — search a city or set manually');
-      else                       setLocStatus('error',  'Could not get location', 'geo');
-    }
-  }
-
-  async function searchLocation() {
-    const query = document.getElementById('locInput').value.trim();
-    if (!query) return;
-    setLocStatus('loading', `Searching "${query}"…`);
-    try {
-      const res  = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
-      const data = await res.json();
-      if (!data.results?.length) { setLocStatus('error', `"${query}" not found`); return; }
-      const r = data.results[0];
-      lat = r.latitude; lon = r.longitude;
-      locationName = `${r.name}${r.admin1?', '+r.admin1:''}${r.country_code&&r.country_code!=='US'?', '+r.country_code:''}`;
-      document.getElementById('locInput').value = locationName;
-      await fetchWeatherForLocation();
-      lastUpdated = new Date();
-      const time = lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setLocStatus('live', `${locationName} · ${time}`);
-      saveState();
-      if (departureIsNow) document.getElementById('departureInput').value = nowToInputStr();
-      renderTripForecast();
-    } catch (err) {
-      setLocStatus('error', 'Search failed — check your connection', 'search');
-    }
-  }
-
-  // Auto-refresh when returning to the app after a while
-  let hiddenSince = null;
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { hiddenSince = Date.now(); return; }
-    if (lat != null && lon != null && hiddenSince && Date.now() - hiddenSince > 10 * 60000 && departureIsNow) {
-      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      fetchWeatherForLocation().then(() => setLocStatus('live', `${locationName} · ${time}`)).catch(()=>{});
-    }
-  });
-
-  // ─── Init ────────────────────────────────────────────────────────────────────
-  const saved = loadState();
-  document.querySelectorAll('.act-pill').forEach(b => b.classList.remove('active'));
-  const ap = document.getElementById('act-'+activity); if (ap) ap.classList.add('active');
-  if (unit === 'C') setUnit('C');
-  document.getElementById('departureInput').value = nowToInputStr();
-  render();
-
-  if (saved.lat != null && saved.lon != null) {
-    // Restore last location instantly — no geolocation prompt on reopen
-    document.getElementById('locInput').value = locationName;
-    setLocStatus('loading', `Updating ${locationName}…`);
-    fetchWeatherForLocation()
-      .then(() => setLocStatus('live', `${locationName} · ${new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}`))
-      .catch(() => setLocStatus('error', 'Could not refresh — tap to retry', 'search'));
-  } else {
-    fetchLiveWeather();
-  }
-
-  // ─── Service worker (PWA / installable) ────────────────────────────────────────
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
-  }
+  // ── init ──
+  const saved=load();
+  buildActivity();setUnit(unit);render();
+  if(saved.lat!=null){setCity(locationName);setLoc('loading','Updating…');fetchWeather().then(()=>setLoc('live',locationName+' · updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))).catch(()=>setLoc('error','Could not refresh.'));}
+  else{setCity('Set location');fetchLiveWeather();}
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
 </html>
