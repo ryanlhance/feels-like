@@ -47,10 +47,10 @@
 
     /* reactive sky — over-extend past the viewport edges so the background fills the
        whole screen on iOS Safari (fixed layers otherwise stop at the status bar / toolbar) */
-    #sky{position:fixed;inset:-12vh 0;z-index:-4;background:linear-gradient(180deg,#0b1026,#1a2350 55%,#2a3570);transition:background 1.1s ease}
-    #sceneImg{position:fixed;inset:-12vh 0;z-index:-3;background-size:cover;background-position:center;opacity:0;transition:opacity 1.1s ease}
-    #glow{position:fixed;inset:-12vh 0;z-index:-2;opacity:0;transition:opacity 1.1s ease,background 1.1s ease;pointer-events:none}
-    #precip{position:fixed;inset:-12vh 0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .9s ease}
+    /* The scene lives on the <body> background, which propagates to the page canvas — the only
+       surface that fills the ENTIRE screen on iOS (under the status bar + home-indicator insets).
+       #precip is a light rain/snow overlay painted on top of it. */
+    #precip{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .9s ease}
     #precip.rain{opacity:.45;background-image:repeating-linear-gradient(101deg,rgba(255,255,255,0.15) 0 1px,transparent 1px 12px);background-size:100% 220px;animation:rain .5s linear infinite}
     #precip.snow{opacity:.8;background-image:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(2px 2px at 60% 70%,rgba(255,255,255,.9),transparent),radial-gradient(1.6px 1.6px at 80% 20%,#fff,transparent),radial-gradient(2px 2px at 40% 80%,rgba(255,255,255,.85),transparent);background-size:340px 340px,420px 420px,300px 300px,380px 380px;animation:snow 9s linear infinite}
     @keyframes rain{to{background-position:0 220px}}
@@ -189,7 +189,7 @@
 </head>
 <body>
 
-<div id="sky"></div><div id="sceneImg"></div><div id="glow"></div><div id="precip"></div>
+<div id="precip"></div>
 
 <div id="app">
 
@@ -534,23 +534,21 @@
   const imgCache={};
   function applyScene(c){
     const sc=SCENES[sceneKey(c)]||SCENES['clear-night'];
-    document.getElementById('sky').style.background=`linear-gradient(180deg,${sc.g[0]},${sc.g[1]} 52%,${sc.g[2]})`;
-    const gl=document.getElementById('glow');gl.style.background=`radial-gradient(120% 80% at ${sc.gp},${sc.glow},transparent 60%)`;
+    const grad=`linear-gradient(180deg,${sc.g[0]},${sc.g[1]} 52%,${sc.g[2]})`;
     document.getElementById('precip').className=sc.p||'';
     document.getElementById('themeColor').setAttribute('content',sc.g[0]);
-    // real scene art when present; gradient + glow are the fallback while it loads / if absent.
-    // A failed load (e.g. a transient cache miss during a SW update) is NOT cached as permanent —
-    // it's left unset so the next render retries, instead of getting stuck on the gradient.
-    const url='assets/scene-'+sc.img+'.jpg', el=document.getElementById('sceneImg');
-    const show=()=>{el.style.backgroundImage=`url(${url})`;el.style.opacity='1';gl.style.opacity='0';};
-    const fallback=()=>{el.style.opacity='0';gl.style.opacity='1';};
-    if(imgCache[url]==='ok'){show();}
+    // Paint the scene onto the <body> background → propagates to the canvas → fills the whole
+    // screen (insets included). The gradient is the fallback shown while the image loads / if absent.
+    // A failed load (e.g. a transient SW cache miss) is left unset so the next render retries.
+    const url='assets/scene-'+sc.img+'.jpg';
+    const paint=img=>{document.body.style.background=(img?`url("${url}") center/cover no-repeat, `:'')+grad;};
+    if(imgCache[url]==='ok'){paint(true);}
     else{
-      fallback();
+      paint(false);
       if(imgCache[url]!=='loading'){
         imgCache[url]='loading';
         const p=new Image();
-        p.onload=()=>{imgCache[url]='ok';if(sceneKey(currentConditions())===sceneKey(c))show();};
+        p.onload=()=>{imgCache[url]='ok';if(sceneKey(currentConditions())===sceneKey(c))paint(true);};
         p.onerror=()=>{imgCache[url]=undefined;};
         p.src=url;
       }
