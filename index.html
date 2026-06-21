@@ -534,6 +534,10 @@
     const gl=document.getElementById('glow');gl.style.background=`radial-gradient(120% 80% at ${sc.gp},${sc.glow},transparent 60%)`;
     document.getElementById('precip').className=sc.p||'';
     document.getElementById('themeColor').setAttribute('content',sc.g[0]);
+    // Tint the canvas to the scene so iOS Safari's status bar / toolbar blend instead of going
+    // black. Set ONLY body (NOT html): with html transparent, the body background propagates to
+    // the canvas and is painted BELOW the scene layers, so it never hides the image.
+    document.body.style.backgroundColor=sc.g[0];
     // real scene art when present; gradient + glow are the fallback while it loads / if absent.
     // A failed load (e.g. a transient cache miss during a SW update) is NOT cached as permanent —
     // it's left unset so the next render retries, instead of getting stuck on the gradient.
