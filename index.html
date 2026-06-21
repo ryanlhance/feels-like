@@ -537,11 +537,15 @@
     const grad=`linear-gradient(180deg,${sc.g[0]},${sc.g[1]} 52%,${sc.g[2]})`;
     document.getElementById('precip').className=sc.p||'';
     document.getElementById('themeColor').setAttribute('content',sc.g[0]);
-    // Paint the scene onto the <body> background → propagates to the canvas → fills the whole
-    // screen (insets included). The gradient is the fallback shown while the image loads / if absent.
-    // A failed load (e.g. a transient SW cache miss) is left unset so the next render retries.
+    // Paint the scene onto the <body> background → propagates to the canvas. The IMAGE fills the
+    // body box (the screen), but iOS only paints the thin safe-area insets with the canvas's solid
+    // COLOR — so also set background-color to the sky's bottom tone (g[2]) so that inset strip reads
+    // as the sky continuing rather than a white/dark bar. Gradient is the fallback while loading.
     const url='assets/scene-'+sc.img+'.jpg';
-    const paint=img=>{document.body.style.background=(img?`url("${url}") center/cover no-repeat, `:'')+grad;};
+    const paint=img=>{
+      document.body.style.background=(img?`url("${url}") center/cover no-repeat, `:'')+grad;
+      document.body.style.backgroundColor=sc.g[2];
+    };
     if(imgCache[url]==='ok'){paint(true);}
     else{
       paint(false);
@@ -741,6 +745,65 @@
   if(saved.lat!=null){setCity(locationName);setLoc('loading','Updating…');fetchWeather().then(()=>setLoc('live',locationName+' · updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))).catch(()=>setLoc('error','Could not refresh.'));}
   else{setCity('Set location');fetchLiveWeather();}
   if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
+  // ── viewport / safe-area diagnostics + bottom-band fill experiments (URL-hash gated; never ships) ──
+  //   #debug     → measure only; production rendering untouched (color-band fix stays active)
+  //   #fulltest  → enlarge the BODY box to full screen height (screen.height px). If the image
+  //                follows the box, the bottom band shows sky; if it's still clipped, it shows MAGENTA.
+  //   #fixedtest → same probe via a position:fixed full-screen image layer (tests fixed-clipping).
+  //   In both experiments the body color is forced magenta so any uncovered pixel is unmistakable.
+  (function(){
+    const mode=(location.hash||'').slice(1);
+    if(!['debug','fulltest','fixedtest'].includes(mode))return;
+
+    // probe that reports the live safe-area insets
+    const probe=document.createElement('div');
+    probe.style.cssText='position:fixed;inset:0;pointer-events:none;visibility:hidden;'
+      +'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+    document.body.appendChild(probe);
+    const cs=getComputedStyle(probe);
+    // measure what a given CSS length actually resolves to in px (works even when clipped offscreen)
+    const unit=u=>{const d=document.createElement('div');
+      d.style.cssText='position:fixed;left:0;top:0;width:1px;visibility:hidden;pointer-events:none;height:'+u;
+      document.body.appendChild(d);const h=Math.round(d.getBoundingClientRect().height);d.remove();return h;};
+
+    const box=document.createElement('div');
+    box.style.cssText='position:fixed;left:8px;top:8px;z-index:99999;pointer-events:none;'
+      +'font:11px/1.45 ui-monospace,Menlo,monospace;color:#0f0;background:rgba(0,0,0,.82);'
+      +'padding:8px 10px;border-radius:8px;white-space:pre;max-width:92vw';
+    document.body.appendChild(box);
+    const read=()=>{
+      const sh=screen.height, tag=v=>v+(v===sh?'  ← full ✓':'');
+      box.textContent=
+        'mode: #'+mode+'\n'+
+        'standalone: '+(navigator.standalone===true)+'   dpr: '+devicePixelRatio+'\n'+
+        'screen.height: '+sh+'\n'+
+        'innerHeight:   '+tag(innerHeight)+'\n'+
+        'doc clientH:   '+tag(document.documentElement.clientHeight)+'\n'+
+        '100vh:  '+tag(unit('100vh'))+'\n'+
+        '100svh: '+tag(unit('100svh'))+'\n'+
+        '100lvh: '+tag(unit('100lvh'))+'\n'+
+        '100dvh: '+tag(unit('100dvh'))+'\n'+
+        'safe T/B/L/R: '+parseInt(cs.paddingTop)+'/'+parseInt(cs.paddingBottom)
+          +'/'+parseInt(cs.paddingLeft)+'/'+parseInt(cs.paddingRight);
+    };
+    read();addEventListener('resize',read);setInterval(read,500);
+
+    if(mode==='fulltest'){
+      document.body.style.minHeight=screen.height+'px';      // grow the painting box to the full screen
+    }
+    if(mode==='fixedtest'){
+      const layer=document.createElement('div');
+      layer.style.cssText='position:fixed;left:0;top:0;width:100%;height:'+screen.height
+        +'px;z-index:-2;pointer-events:none;background-size:cover;background-position:center';
+      document.body.insertBefore(layer,document.body.firstChild);
+      setInterval(()=>{layer.style.backgroundImage=getComputedStyle(document.body).backgroundImage.split(',')[0];},400);
+    }
+    if(mode==='fulltest'||mode==='fixedtest'){
+      // applyScene re-sets body bg-color each render; re-assert magenta so any uncovered band screams
+      setInterval(()=>document.body.style.setProperty('background-color','#f0f','important'),200);
+    }
+  })();
 </script>
 </body>
 </html>
