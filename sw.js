@@ -1,6 +1,6 @@
 // Feels Like — service worker. Caches the app shell; shows offline.html when the
 // network is unavailable (we intentionally do NOT cache live weather readings).
-const CACHE = 'feelslike-v10';
+const CACHE = 'feelslike-v11';
 const SHELL = ['./','./index.html','./offline.html','./manifest.webmanifest','./favicon.png','./apple-touch-icon.png','./icon-192.png'];
 
 self.addEventListener('install', e => {
