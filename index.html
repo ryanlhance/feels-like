@@ -749,13 +749,33 @@
   let hid=null;
   document.addEventListener('visibilitychange',()=>{if(document.hidden){hid=Date.now();return;}if(lat!=null&&hid&&Date.now()-hid>6e5)fetchWeather().catch(()=>{});});
 
-  // iOS standalone ONLY: the layout viewport is 62px shorter than the screen, so #scene would stop above
-  // the home-indicator inset. Grow the body to the real screen.height in px so the absolute #scene fills
-  // edge to edge. Gated on navigator.standalone — doing this in Safari just creates dead scroll.
-  function fitScreen(){if(navigator.standalone===true)document.body.style.minHeight=screen.height+'px';}
+  // Fill the screen without dead scroll.
+  //  • Standalone: layout viewport is 62px shorter than the screen, so grow the body to the real
+  //    screen.height in px → the absolute #scene reaches the home-indicator inset.
+  //  • Safari/browser: pin the body to exactly the visible viewport (innerHeight) so it can't scroll
+  //    past the content, and #scene covers exactly what's visible. (Don't trust 100dvh to do this.)
+  function fitScreen(){
+    if(navigator.standalone===true){document.body.style.minHeight=screen.height+'px';}
+    else if(innerHeight){document.body.style.height=innerHeight+'px';document.body.style.minHeight='0';}
+  }
   ['load','pageshow','resize','orientationchange'].forEach(ev=>
     addEventListener(ev,()=>{fitScreen();setTimeout(fitScreen,250);}));
+  if(window.visualViewport)visualViewport.addEventListener('resize',fitScreen); // catches iOS toolbar show/hide
   fitScreen();setTimeout(fitScreen,300);setTimeout(fitScreen,1000);
+
+  // Safari-tab ONLY confirmation stamp (never shows in the installed app). 'over' = scroll overflow in
+  // px (target 0). Remove once Safari is confirmed clean.
+  if(navigator.standalone!==true){
+    const s=document.createElement('div');
+    s.style.cssText='position:fixed;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;'
+      +'top:calc(env(safe-area-inset-top) + 4px);font:10px/1.2 ui-monospace,Menlo,monospace;color:#fff;'
+      +'background:rgba(0,0,0,.62);padding:3px 7px;border-radius:6px;white-space:nowrap;letter-spacing:.02em';
+    document.body.appendChild(s);
+    const upd=()=>{const de=document.documentElement;
+      s.textContent='v31 safari · ih'+innerHeight+' cl'+de.clientHeight+' bh'+document.body.offsetHeight
+        +' over'+(de.scrollHeight-innerHeight);};
+    upd();setInterval(upd,400);addEventListener('resize',upd);
+  }
 
   // ── init ──
   const saved=load();
