@@ -31,11 +31,12 @@
       --scale:linear-gradient(90deg,#3a6ea8 0%,#5fa0d0 38%,#86bcb6 52%,#7cc486 66%,#e3a052 82%,#d3612e 100%);
     }
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-    /* NOTE: overflow:hidden on <html> clips fixed background layers to the safe viewport on iOS
-       (leaving the bottom home-indicator inset uncovered). Keep the no-scroll lock on <body> only. */
-    html{height:100%}
+    /* NOTE: overflow:hidden on <html>/<body> clips the fixed background layers to the layout
+       viewport on iOS, leaving the bottom screen inset showing the dark page color. Don't clip
+       here — the no-scroll lock lives on #app (content fits, so nothing scrolls anyway). */
+    html{height:100%;overscroll-behavior:none}
     body{
-      height:100%; overflow:hidden;
+      height:100%; overscroll-behavior:none;
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       color:var(--text); -webkit-font-smoothing:antialiased; background:#0b1026;
     }
@@ -55,7 +56,7 @@
     @keyframes rain{to{background-position:0 220px}}
     @keyframes snow{to{background-position:0 340px,-30px 420px,20px 300px,-10px 380px}}
 
-    #app{height:100dvh;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
+    #app{height:100dvh;overflow:hidden;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
       padding:max(10px,env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));gap:9px}
     /* location bar pinned at top; the card stack centers in the space below */
     .stack{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:9px}
@@ -742,29 +743,6 @@
   if(saved.lat!=null){setCity(locationName);setLoc('loading','Updating…');fetchWeather().then(()=>setLoc('live',locationName+' · updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))).catch(()=>setLoc('error','Could not refresh.'));}
   else{setCity('Set location');fetchLiveWeather();}
   if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-
-  // ── TEMP DIAGNOSTIC (remove after) ──
-  (function(){
-    var probe=document.createElement('div');
-    probe.style.cssText='position:fixed;bottom:0;left:0;height:env(safe-area-inset-bottom);width:1px;pointer-events:none';
-    document.body.appendChild(probe);
-    var topProbe=document.createElement('div');
-    topProbe.style.cssText='position:fixed;top:0;left:0;height:env(safe-area-inset-top);width:1px;pointer-events:none';
-    document.body.appendChild(topProbe);
-    var d=document.createElement('div');
-    d.style.cssText='position:fixed;left:10px;right:10px;top:40%;z-index:99999;background:rgba(200,0,0,.92);color:#fff;font:12px/1.45 ui-monospace,monospace;padding:9px 11px;border-radius:10px;pointer-events:none;white-space:pre';
-    document.body.appendChild(d);
-    function u(){
-      var si=document.getElementById('sceneImg').getBoundingClientRect();
-      d.textContent='DIAG build17\n'+
-        'standalone: '+(window.navigator.standalone===true||matchMedia('(display-mode:standalone)').matches)+'\n'+
-        'innerH:'+window.innerHeight+'  clientH:'+document.documentElement.clientHeight+'\n'+
-        'screenH:'+screen.height+'  dpr:'+window.devicePixelRatio+'\n'+
-        'sceneImg top:'+Math.round(si.top)+'  bottom:'+Math.round(si.bottom)+'\n'+
-        'safe-top:'+topProbe.getBoundingClientRect().height+'  safe-bottom:'+probe.getBoundingClientRect().height;
-    }
-    setInterval(u,400);u();
-  })();
 </script>
 </body>
 </html>
