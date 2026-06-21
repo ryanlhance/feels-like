@@ -57,7 +57,12 @@
     /* Scene lives on an ABSOLUTE element (not body-background, not fixed): body-background cover-sizing
        and position:fixed both clip to iOS's 812 layout viewport, leaving the home-indicator inset bare.
        An absolute child of the 874-tall (fitScreen) position:relative body paints the full height. */
-    #scene{position:absolute;inset:0;z-index:-2;background-position:center;background-size:cover;background-repeat:no-repeat;pointer-events:none}
+    /* Safari/browser: fixed scene extended INTO the safe-area insets, so it covers the notch + home-
+       indicator strips that sit outside the layout viewport — without adding any scrollable height. */
+    #scene{position:fixed;top:calc(-1 * env(safe-area-inset-top));right:0;bottom:calc(-1 * env(safe-area-inset-bottom));left:0;z-index:-2;background-position:center;background-size:cover;background-repeat:no-repeat;pointer-events:none}
+    /* Installed PWA: position:fixed is clipped to iOS's short layout viewport (won't reach the inset),
+       so fill the fitScreen-grown body with an absolute scene instead. */
+    html.pwa #scene{position:absolute;inset:0}
     #precip{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .9s ease}
     #precip.rain{opacity:.45;background-image:repeating-linear-gradient(101deg,rgba(255,255,255,0.15) 0 1px,transparent 1px 12px);background-size:100% 220px;animation:rain .5s linear infinite}
     #precip.snow{opacity:.8;background-image:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(2px 2px at 60% 70%,rgba(255,255,255,.9),transparent),radial-gradient(1.6px 1.6px at 80% 20%,#fff,transparent),radial-gradient(2px 2px at 40% 80%,rgba(255,255,255,.85),transparent);background-size:340px 340px,420px 420px,300px 300px,380px 380px;animation:snow 9s linear infinite}
@@ -749,11 +754,14 @@
   let hid=null;
   document.addEventListener('visibilitychange',()=>{if(document.hidden){hid=Date.now();return;}if(lat!=null&&hid&&Date.now()-hid>6e5)fetchWeather().catch(()=>{});});
 
+  // Tag the installed PWA so #scene uses absolute (fixed is clipped in standalone). Safari keeps fixed.
+  if(navigator.standalone===true)document.documentElement.classList.add('pwa');
+
   // Fill the screen without dead scroll.
   //  • Standalone: layout viewport is 62px shorter than the screen, so grow the body to the real
   //    screen.height in px → the absolute #scene reaches the home-indicator inset.
   //  • Safari/browser: pin the body to exactly the visible viewport (innerHeight) so it can't scroll
-  //    past the content, and #scene covers exactly what's visible. (Don't trust 100dvh to do this.)
+  //    past the content; the fixed #scene (extended into the insets via CSS) covers the strips.
   function fitScreen(){
     if(navigator.standalone===true){document.body.style.minHeight=screen.height+'px';}
     else if(innerHeight){document.body.style.height=innerHeight+'px';document.body.style.minHeight='0';}
@@ -771,9 +779,9 @@
       +'top:calc(env(safe-area-inset-top) + 4px);font:10px/1.2 ui-monospace,Menlo,monospace;color:#fff;'
       +'background:rgba(0,0,0,.62);padding:3px 7px;border-radius:6px;white-space:nowrap;letter-spacing:.02em';
     document.body.appendChild(s);
-    const upd=()=>{const de=document.documentElement;
-      s.textContent='v31 safari · ih'+innerHeight+' cl'+de.clientHeight+' bh'+document.body.offsetHeight
-        +' over'+(de.scrollHeight-innerHeight);};
+    const upd=()=>{const de=document.documentElement,r=document.getElementById('scene').getBoundingClientRect();
+      s.textContent='v32 safari · ih'+innerHeight+' over'+(de.scrollHeight-innerHeight)
+        +' scene['+Math.round(r.top)+'..'+Math.round(r.bottom)+']';};
     upd();setInterval(upd,400);addEventListener('resize',upd);
   }
 
