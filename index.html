@@ -165,7 +165,7 @@
     .pool .info{color:var(--faint);flex-shrink:0}
     .pool .info .ico{width:19px;height:19px}
 
-    .loc-line{font-size:.62rem;margin-top:-2px}
+    .loc-line{font-size:.62rem;margin-top:9px}
     .loc-line.err{color:#ff9a9a} .loc-line.live{color:#79e3a3}
 
     /* sheets */
@@ -456,14 +456,13 @@
   }
 
   // ── pool ──
-  function estimatePool(wk,wks,tF,s){let p=(wk*.65+tF*.35)-10;p+=WEEK_SUN[wks];p+=s==='full'?2:s==='partial'?1:0;return Math.max(50,Math.min(95,Math.round(p)));}
+  function estimatePool(wk,wks,tF,s){let p=wk*.7+tF*.3;p+=WEEK_SUN[wks];p+=s==='full'?2:s==='partial'?1:0;return Math.max(45,Math.min(95,Math.round(p)));}
   function poolGlance(pt,air,w,s){
-    // Three states: swim · cold plunge (with a max duration) · neither.
+    // Two useful states: swim, or cold plunge (with a max duration). "Not pool weather" only when it's truly unsafe.
     let vd,go;
     if(pt>=74){ vd = air>=72 ? 'Enjoy Your Pool Day' : 'Pool’s Warm, Air Is Cool'; go=2; }
-    else if(pt>=68){ vd='Not Pool Weather'; go=0; }          // lukewarm — too cool to swim, too warm to plunge
-    else if(pt>=45){
-      const mins = pt<50?'2–4':pt<56?'5–10':pt<62?'10–15':'15–20';
+    else if(pt>=45){                                          // below swim temp → always give a plunge duration
+      const mins = pt<50?'2–4':pt<56?'5–10':pt<62?'10–15':pt<68?'15–20':'20–30';
       vd='Cold Plunge · '+mins+' min max'; go=1;
     }
     else{ vd='Not Pool Weather'; go=0; }                     // dangerously cold (detail in the info sheet)
@@ -471,11 +470,12 @@
     return{vd,sub,go,pt};
   }
   function coldTherapy(pt){
-    if(pt>=68)return null;
+    if(pt>=74)return null;
     if(pt<45)return{cls:'warn',i:'snow',t:'<b>Dangerously cold.</b> Risk of cold shock — not safe for immersion.'};
     if(pt<56)return{cls:'cool',i:'snow',t:'<b>Prime cold-therapy range.</b> ~'+dT(pt)+' is ideal for recovery — limit to 10–15 min.'};
     if(pt<62)return{cls:'cool',i:'snow',t:'<b>Good cold-therapy range.</b> Real recovery benefit, easier than an ice bath.'};
-    return{cls:'cool',i:'snow',t:'<b>Mild cold therapy.</b> Warmer edge — some benefit for soreness.'};
+    if(pt<68)return{cls:'cool',i:'snow',t:'<b>Mild cold therapy.</b> Warmer edge — some benefit for soreness.'};
+    return{cls:'cool',i:'snow',t:'<b>Cool dip.</b> Refreshing on a warm day, but too mild for real cold-therapy benefit.'};
   }
 
   function getAdvice(eff,c){
