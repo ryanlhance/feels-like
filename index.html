@@ -41,11 +41,12 @@
     .ico{width:22px;height:22px;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;fill:none}
     .ico.fill{fill:currentColor;stroke:none}
 
-    /* reactive sky (gradient is the placeholder; #sceneImg upgrades it when art lands) */
-    #sky{position:fixed;inset:0;z-index:-4;background:linear-gradient(180deg,#0b1026,#1a2350 55%,#2a3570);transition:background 1.1s ease}
-    #sceneImg{position:fixed;inset:0;z-index:-3;background-size:cover;background-position:center;opacity:0;transition:opacity 1.1s ease}
-    #glow{position:fixed;inset:0;z-index:-2;opacity:0;transition:opacity 1.1s ease,background 1.1s ease;pointer-events:none}
-    #precip{position:fixed;inset:-10% 0 0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .9s ease}
+    /* reactive sky — over-extend past the viewport edges so the background fills the
+       whole screen on iOS Safari (fixed layers otherwise stop at the status bar / toolbar) */
+    #sky{position:fixed;inset:-12vh 0;z-index:-4;background:linear-gradient(180deg,#0b1026,#1a2350 55%,#2a3570);transition:background 1.1s ease}
+    #sceneImg{position:fixed;inset:-12vh 0;z-index:-3;background-size:cover;background-position:center;opacity:0;transition:opacity 1.1s ease}
+    #glow{position:fixed;inset:-12vh 0;z-index:-2;opacity:0;transition:opacity 1.1s ease,background 1.1s ease;pointer-events:none}
+    #precip{position:fixed;inset:-12vh 0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .9s ease}
     #precip.rain{opacity:.45;background-image:repeating-linear-gradient(101deg,rgba(255,255,255,0.15) 0 1px,transparent 1px 12px);background-size:100% 220px;animation:rain .5s linear infinite}
     #precip.snow{opacity:.8;background-image:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(2px 2px at 60% 70%,rgba(255,255,255,.9),transparent),radial-gradient(1.6px 1.6px at 80% 20%,#fff,transparent),radial-gradient(2px 2px at 40% 80%,rgba(255,255,255,.85),transparent);background-size:340px 340px,420px 420px,300px 300px,380px 380px;animation:snow 9s linear infinite}
     @keyframes rain{to{background-position:0 220px}}
