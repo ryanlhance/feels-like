@@ -754,17 +754,24 @@
   //   In both experiments the body color is forced magenta so any uncovered pixel is unmistakable.
   (function(){
     const MODES=['','debug','fulltest','fixedtest'];
-    // standalone PWAs have no address bar, so the hash can't be typed there. Long-press the
-    // top-left corner (~1s) to cycle modes; persisted for the session, cleared when the app quits.
     let mode=(location.hash||'').slice(1);
     if(!MODES.includes(mode))mode='';
     if(!mode)mode=sessionStorage.getItem('flDbg')||'';
-    let pt=null; const clr=()=>{if(pt){clearTimeout(pt);pt=null;}};
-    addEventListener('pointerdown',e=>{ if(e.clientX<=44&&e.clientY<=44){
-      pt=setTimeout(()=>{ sessionStorage.setItem('flDbg',MODES[(MODES.indexOf(mode)+1)%MODES.length]);
-        location.hash=''; location.reload(); },1000); } },true);
-    addEventListener('pointerup',clr,true); addEventListener('pointercancel',clr,true);
-    addEventListener('pointermove',e=>{if(pt&&(e.clientX>60||e.clientY>60))clr();},true);
+
+    // VISIBLE tappable chip (standalone PWAs have no address bar). Always shown; reads "DBG ▸" when
+    // off, expands to the live readout when on. Tap to cycle off→debug→fulltest→fixedtest→off.
+    const box=document.createElement('div');
+    box.style.cssText='position:fixed;left:8px;z-index:99999;cursor:pointer;'
+      +'top:calc(env(safe-area-inset-top) + 6px);'
+      +'font:11px/1.4 ui-monospace,Menlo,monospace;color:#0f0;background:rgba(0,0,0,.85);'
+      +'padding:6px 9px;border-radius:8px;white-space:pre;max-width:92vw;'
+      +'border:1px solid rgba(0,255,0,.55);-webkit-user-select:none;user-select:none';
+    box.textContent='DBG ▸';
+    box.addEventListener('click',()=>{
+      sessionStorage.setItem('flDbg',MODES[(MODES.indexOf(mode)+1)%MODES.length]);
+      location.hash=''; location.reload();
+    });
+    document.body.appendChild(box);
 
     if(!['debug','fulltest','fixedtest'].includes(mode))return;
 
@@ -779,11 +786,6 @@
       d.style.cssText='position:fixed;left:0;top:0;width:1px;visibility:hidden;pointer-events:none;height:'+u;
       document.body.appendChild(d);const h=Math.round(d.getBoundingClientRect().height);d.remove();return h;};
 
-    const box=document.createElement('div');
-    box.style.cssText='position:fixed;left:8px;top:8px;z-index:99999;pointer-events:none;'
-      +'font:11px/1.45 ui-monospace,Menlo,monospace;color:#0f0;background:rgba(0,0,0,.82);'
-      +'padding:8px 10px;border-radius:8px;white-space:pre;max-width:92vw';
-    document.body.appendChild(box);
     const read=()=>{
       const sh=screen.height, tag=v=>v+(v===sh?'  ← full ✓':'');
       box.textContent=
