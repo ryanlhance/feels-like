@@ -31,8 +31,11 @@
       --scale:linear-gradient(90deg,#3a6ea8 0%,#5fa0d0 38%,#86bcb6 52%,#7cc486 66%,#e3a052 82%,#d3612e 100%);
     }
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%;overflow:hidden}
+    /* NOTE: overflow:hidden on <html> clips fixed background layers to the safe viewport on iOS
+       (leaving the bottom home-indicator inset uncovered). Keep the no-scroll lock on <body> only. */
+    html{height:100%}
     body{
+      height:100%; overflow:hidden;
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       color:var(--text); -webkit-font-smoothing:antialiased; background:#0b1026;
     }
