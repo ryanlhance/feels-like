@@ -746,19 +746,40 @@
   let hid=null;
   document.addEventListener('visibilitychange',()=>{if(document.hidden){hid=Date.now();return;}if(lat!=null&&hid&&Date.now()-hid>6e5)fetchWeather().catch(()=>{});});
 
-  // iOS standalone: force the body box to the real screen height in px so the scene image fills the
-  // bottom home-indicator inset (CSS units don't expand the viewport here; a px min-height does).
+  // iOS standalone: the layout viewport is shorter than the screen, so the scene image stops above the
+  // home-indicator inset. Force the body box to the real screen height in px (CSS units don't expand
+  // the viewport here). Re-run across every event where iOS may (re)settle the viewport.
   function fitScreen(){document.body.style.minHeight=screen.height+'px';}
-  fitScreen();
-  addEventListener('resize',fitScreen);
-  addEventListener('orientationchange',()=>setTimeout(fitScreen,250));
+  ['load','pageshow','resize','orientationchange'].forEach(ev=>
+    addEventListener(ev,()=>{fitScreen();setTimeout(fitScreen,250);}));
+  fitScreen();setTimeout(fitScreen,300);setTimeout(fitScreen,1000);
+
+  // TEMP on-screen stamp — tells new-build-vs-stale-cache apart and reads the real viewport on device.
+  // (ih=innerHeight, vv=visualViewport, sh=screen.height, bh=body height.) Removed once confirmed.
+  (function(){
+    const s=document.createElement('div');
+    s.style.cssText='position:fixed;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;'
+      +'top:calc(env(safe-area-inset-top) + 4px);'
+      +'font:10px/1.2 ui-monospace,Menlo,monospace;color:#fff;background:rgba(0,0,0,.62);'
+      +'padding:3px 7px;border-radius:6px;white-space:nowrap;letter-spacing:.02em';
+    document.body.appendChild(s);
+    const vv=()=>window.visualViewport?Math.round(visualViewport.height):'-';
+    const upd=()=>{s.textContent='v28 · ih'+innerHeight+' vv'+vv()+' sh'+screen.height+' bh'+document.body.offsetHeight;};
+    upd();setInterval(upd,500);addEventListener('resize',upd);
+  })();
 
   // ── init ──
   const saved=load();
   buildActivity();setUnit(unit);render();
   if(saved.lat!=null){setCity(locationName);setLoc('loading','Updating…');fetchWeather().then(()=>setLoc('live',locationName+' · updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))).catch(()=>setLoc('error','Could not refresh.'));}
   else{setCity('Set location');fetchLiveWeather();}
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  if('serviceWorker'in navigator){
+    // auto-reload once when a new service worker takes control, so a fresh deploy can't be masked by
+    // a stale cached page (the classic "looks exactly the same after deploy" trap).
+    let swReloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!swReloaded){swReloaded=true;location.reload();}});
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
 </script>
 </body>
 </html>
