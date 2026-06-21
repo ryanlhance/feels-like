@@ -35,11 +35,12 @@
        viewport on iOS, leaving the bottom screen inset showing the dark page color. Don't clip
        here — the no-scroll lock lives on #app (content fits, so nothing scrolls anyway). */
     html{height:100%;overscroll-behavior:none}
-    /* min-height:100vh (NOT 100% / 100dvh) is the fix for the iOS standalone bottom band: on the
-       home screen the layout viewport is 62px (=safe-top) shorter than the screen, so 100%/100dvh
-       resolve to 812 on an 874 screen and the body's cover-image stops short of the home-indicator
-       inset. 100vh resolves to the FULL screen (874), so the image fills edge to edge. (Verified on
-       device: 100vh/100lvh = 874; 100dvh/100svh/innerHeight = 812.) */
+    /* iOS standalone bottom-band fix: on the home screen the layout viewport is 62px (=safe-top)
+       shorter than the screen, so the body's cover-image stops short of the home-indicator inset and
+       the flat fallback color shows. CSS units (even 100vh) do NOT grow the painting box here — only
+       setting min-height to the real screen.height in PX at runtime forces iOS to expand the viewport
+       to full height so the image fills edge to edge. That px value is applied in JS (fitScreen());
+       100vh is just the pre-JS fallback. (Verified on device: px works, 100vh alone does not.) */
     body{
       min-height:100vh; overscroll-behavior:none;
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
@@ -744,6 +745,13 @@
   // auto refresh on return
   let hid=null;
   document.addEventListener('visibilitychange',()=>{if(document.hidden){hid=Date.now();return;}if(lat!=null&&hid&&Date.now()-hid>6e5)fetchWeather().catch(()=>{});});
+
+  // iOS standalone: force the body box to the real screen height in px so the scene image fills the
+  // bottom home-indicator inset (CSS units don't expand the viewport here; a px min-height does).
+  function fitScreen(){document.body.style.minHeight=screen.height+'px';}
+  fitScreen();
+  addEventListener('resize',fitScreen);
+  addEventListener('orientationchange',()=>setTimeout(fitScreen,250));
 
   // ── init ──
   const saved=load();
