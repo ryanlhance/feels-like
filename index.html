@@ -533,11 +533,7 @@
     document.getElementById('sky').style.background=`linear-gradient(180deg,${sc.g[0]},${sc.g[1]} 52%,${sc.g[2]})`;
     const gl=document.getElementById('glow');gl.style.background=`radial-gradient(120% 80% at ${sc.gp},${sc.glow},transparent 60%)`;
     document.getElementById('precip').className=sc.p||'';
-    // the page canvas (html/body) is what iOS Safari samples to tint the status bar
-    // and bottom toolbar — drive it from the scene so those edges blend instead of going black
     document.getElementById('themeColor').setAttribute('content',sc.g[0]);
-    document.documentElement.style.backgroundColor=sc.g[0];
-    document.body.style.backgroundColor=sc.g[0];
     // real scene art when present; gradient + glow are the fallback while it loads / if absent.
     // A failed load (e.g. a transient cache miss during a SW update) is NOT cached as permanent —
     // it's left unset so the next render retries, instead of getting stuck on the gradient.
