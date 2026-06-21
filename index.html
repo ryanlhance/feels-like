@@ -538,13 +538,23 @@
     document.getElementById('themeColor').setAttribute('content',sc.g[0]);
     document.documentElement.style.backgroundColor=sc.g[0];
     document.body.style.backgroundColor=sc.g[0];
-    // real scene art when present; the gradient + glow are the fallback while it loads / if absent
+    // real scene art when present; gradient + glow are the fallback while it loads / if absent.
+    // A failed load (e.g. a transient cache miss during a SW update) is NOT cached as permanent —
+    // it's left unset so the next render retries, instead of getting stuck on the gradient.
     const url='assets/scene-'+sc.img+'.jpg', el=document.getElementById('sceneImg');
     const show=()=>{el.style.backgroundImage=`url(${url})`;el.style.opacity='1';gl.style.opacity='0';};
     const fallback=()=>{el.style.opacity='0';gl.style.opacity='1';};
-    if(imgCache[url]===true)show();
-    else if(imgCache[url]===undefined){fallback();const p=new Image();p.onload=()=>{imgCache[url]=true;if(sceneKey(currentConditions())===sceneKey(c))show();};p.onerror=()=>{imgCache[url]=false;};p.src=url;}
-    else fallback();
+    if(imgCache[url]==='ok'){show();}
+    else{
+      fallback();
+      if(imgCache[url]!=='loading'){
+        imgCache[url]='loading';
+        const p=new Image();
+        p.onload=()=>{imgCache[url]='ok';if(sceneKey(currentConditions())===sceneKey(c))show();};
+        p.onerror=()=>{imgCache[url]=undefined;};
+        p.src=url;
+      }
+    }
   }
 
   // ── render ──
